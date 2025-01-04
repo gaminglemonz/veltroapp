@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" class="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+		<title>Home | Veltro</title>
+
+		<!-- Load TailwindCSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<!-- Google Fonts -->
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?&family=Poppins" rel="stylesheet">
+	</head>
+
+	<% if (user) { %> <%- include('header.ejs') %> <% } %>
+	<body class="m-0 font-Poppins dark:bg-slate-700 dark:text-white">
+		<section style="background-image: url('images/parallax.jpg'); background-size: cover; background-attachment: fixed;" id="parallax" class="py-72 px-6 sm:px-12 md:px-24 lg:px-32 xl:px-40 w-full max-h-full text-center lg:text-left">
+			<h2 class="text-white text-3xl sm:text-4xl md:text-5xl font-bold leading-snug my-4">Real-time messaging<br>Anywhere, anytime</h2>
+			<button onclick="window.location.href = '/signup'" class="block bg-white text-black font-bold py-3 px-6 sm:py-4 sm:px-8 my-6 rounded-md text-sm sm:text-base md:text-lg">Get started</button>
+			<button onclick="window.location.href = '/login'" class="block bg-black text-white font-bold py-3 px-6 sm:py-4 sm:px-8 my-6 rounded-md text-sm sm:text-base md:text-lg">Login</button>
+		</section>
+	</body>
+</html>

@@ -1,0 +1,19 @@
+<section class="group fixed transition-all duration-500 w-fit max-w-full bg-transparent backdrop-blur-lg left-1/2 hover:top-[83%] peer-focus:top-[83%] peer-focus-within:top-[83%] top-full transform -translate-x-1/2 p-10 rounded-3xl shadow-xl">
+    <!-- Arrow Container -->
+    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-transparent backdrop-blur-lg w-32 h-16 rounded-t-3xl flex items-center justify-center shadow-md z-10">
+        <i class="material-icons text-4xl text-white mb-11 transform transition-transform duration-500 group-hover:rotate-180">keyboard_arrow_up</i>
+    </div>
+
+    <!-- Navigation Icons -->
+    <div class="flex justify-center space-x-10">
+        <a href="/"><img src="images/veltro.png" width="45" class="cursor-pointer"></a>
+        <a class="material-icons text-5xl text-white" href="/chat">chat_bubble</a>
+        <a class="material-icons text-5xl text-white" href="/settings">settings</a>
+        <a class="material-icons text-5xl text-white" href="/friends">group</a>
+        <fo+++rm action="/logout" method="POST">
+            <button class="material-icons text-5xl text-white" type="submit">logout</button>
+        </form>
+        <a href="/profile"><img src="/avatar/<%= user.id %>" alt="<%= user.username %>'s Avatar" width="45" class="cursor-pointer rounded-full"></a>
+        <i class="material-icons text-5xl text-white cursor-pointer">more_horiz</i>
+    </div>
+</section>

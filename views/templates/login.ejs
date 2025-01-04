@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+		<title>Login | Veltro</title>
+
+		<!-- TailwindCSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<!-- Animated Background -->
+		 <link rel="stylesheet" href="css/bg.css">
+
+		<!-- Google Fonts -->
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	</head>
+	<body class="p-10 font">
+		<section class="prompt my-[150px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
+			<form action="/login/password" method="POST">
+				<h1 class="text-center text-4xl font-bold my-4">Login</h1>
+
+				<label class="block font-bold text-2xl" for="username">Username</label>
+				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="username" name="username" type="text" autocomplete="username" required>
+				
+				<label class="block font-bold text-2xl" for="current-password">Password</label>
+				<input class="block border border-gray-300 rounded-lg my-4 p-2" name='password' type='password' autocomplete='current-password' required>
+				<button type="submit" class="bg-gray-200 font-bold text-xl my-2 p-5 rounded-md" title="Login">Login</button>
+			</form>
+			<p class="help my-2">Don't have an account? <a href="/signup" class="font-bold">Sign up</a></p>
+			<a href='/' class="font-bold text-xl cursor-pointer flex items-center"><i class="material-icons font-bold cursor-pointer mr-2" title="Back to Home">arrow_back</i>Back Home</a>
+		</section>
+		<footer class="info text-white font-bold">
+			<p>Authentication powered by <a href="https://www.passportjs.org" target="_blank">Passport</a></p>
+		</footer>
+
+		<% if (user) { %>
+			<script>
+				window.location.href = '/chat';
+			</script>
+		<%  } %>
+	</body>
+</html>
