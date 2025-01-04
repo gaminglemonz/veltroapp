@@ -10,13 +10,13 @@
 		<script src="https://cdn.tailwindcss.com"></script>
 
 		<!-- Animated Background -->
-		 <link rel="stylesheet" href="css/bg.css">
+		 <link rel="stylesheet" href="styles/bg.css">
 
 		<!-- Google Fonts -->
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	</head>
 	<body class="p-10 font">
-		<section class="prompt my-[150px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
+		<section class="prompt my-[180px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
 			<form action="/login/password" method="POST">
 				<h1 class="text-center text-4xl font-bold my-4">Login</h1>
 
@@ -33,11 +33,5 @@
 		<footer class="info text-white font-bold">
 			<p>Authentication powered by <a href="https://www.passportjs.org" target="_blank">Passport</a></p>
 		</footer>
-
-		<% if (user) { %>
-			<script>
-				window.location.href = '/chat';
-			</script>
-		<%  } %>
 	</body>
 </html>

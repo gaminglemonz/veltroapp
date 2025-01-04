@@ -1,24 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Template Page</title>
-    
-        <!-- TailwindCSS -->
+
+        <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+        <title>Rooms</title>
         <script src="https://cdn.tailwindcss.com"></script>
-    
-        <!-- Material Icons -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     </head>
-    <body class="bg-gray-100 text-gray-800">
-
-        <!-- Header -->
-        <header class="bg-blue-500 text-white py-4 text-center">
-        <h1 class="text-2xl font-bold">Template Page</h1>
-        </header>
-        <% for (let i = 0; i < rooms.length; i ++) { %>
-
-        <% } %>
+    <body class="dark:bg-slate-900 dark:text-white">
+        <div id="rooms-container" class="grid grid-cols-1 gap-4">
+            <% rooms.forEach((room) => { %>
+                <% const roomIcon = (typeof room.icon === 'string' && room.icon) ? room.icon.replace('/public', '') : ''; %>
+                <% const roomBanner = (typeof room.banner === 'string' && room.banner) ? room.banner.replace('/public', '') : ''; %>
+                <div class="p-4 max-w-fit w-fit bg-transparent border border-white rounded-lg">
+                    <div style="margin: 0; background-image:url('<%= roomBanner %>')" class="room-banner w-full h-24"></div>
+                        <h2 class="font-bold text-3xl"><%= room.name %></h2>  
+                        <h3 class="font-bold text-xl">By <%= room.owner %></h3>
+                    </div>
+                    <img class="room-icon w-12 h-12 rounded-full" src="<%= roomIcon %>" alt="Room Icon">
+                    <p><%= room.description %></p>
+                </div>
+            <% }); %>
+            
+        </div>
     </body>
 </html>

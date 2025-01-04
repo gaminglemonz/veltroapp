@@ -49,10 +49,12 @@ app.get('/', (req, res) => {
 app.get('/profile', (req, res) => {
     res.render('profile', { user: req.user });
 });
+app.get('/rooms', (req, res) => {
+    res.render('rooms', { user: req.user })
+});
 app.get('/header', (req, res) => {
     res.render('header', { user: req.user })
 })
-
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {

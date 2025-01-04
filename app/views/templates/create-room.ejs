@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Room List | Veltro</title>
+    
+        <!-- Favicon -->
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+    
+        <!-- TailwindCSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+    
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?&family=Poppins" rel="stylesheet" />
+      </head>
+    <body class="dark dark:bg-slate-800 dark:text-white p-28">
+        <%- include('header.ejs') %>
+        <form action="/create-room" enctype="multipart/form-data" method="POST">
+            <h1 class="text-5xl font-bold my-10">Create New Room</h1>
+            
+            <label class="block my-2 text-3xl font-bold">Name</label>
+            <input required class="p-3 text-black text-xl rounded-lg" placeholder="unique name here!" name="name">
+
+            <section id="type">
+                <label class="block my-2 text-3xl font-bold">Type</label>
+                <select required class="transition-all duration-500 my-4 mb-10 text-black text-2xl outline-none p-3 rounded-md focus:rounded-t-xl" name="type">
+                    <option>Gaming</option>
+                    <option>Friend Group</option>
+                    <option>Study and School</option>
+                    <option>Web and App Developement</option>
+                    <option>Work and Business</option>
+                </select>
+            </section>
+
+            <label for="icon" class="cursor-pointer font-bold text-white text-3xl">Icon</label>
+            <img id="icon" src="#" class="rounded-full w-28 my-5" style="display: none;">
+            <input required onchange="readFile(this, 'icon');" type="file" name="icon" accept="image/*" class="block my-4 text-xl text-white dark:bg-slate-600 focus:outline-none font-regular border-gray-300 rounded-lg p-2"/>
+
+            <label for="icon" class="cursor-pointer font-bold text-white text-3xl">Banner</label>
+            <img id="banner" src="#" class="rounded-full w- my-5" style="display: none;">
+            <input required onchange="readFile(this, 'banner');" type="file" name="banner" accept="image/*" class="block my-4 text-xl text-white dark:bg-slate-600 focus:outline-none font-regular border-gray-300 rounded-lg p-2"/>
+            
+            <section class="my-4">
+                <label for="visibility" class="block cursor-pointer font-bold text-white text-3xl">Visibility</label>
+                <select required class="transition-all duration-500 my-4 mb-10 text-black text-2xl outline-none p-3 rounded-md focus:rounded-t-xl" id="visibility" name="visibility">
+                    <option>Public</option>
+                    <option>Private</option>
+                </select>
+            </section>
+
+            <button type="submit" class="bg-blue-600 font-bold text-white text-2xl rounded-md py-4 px-8 mt-2">Submit</button>
+        </form>
+        <section>
+        <script>
+            const readFile = (data, element) => {
+                if (data.files && data.files[0]){
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        document.getElementById(element).src = e.target.result, document.getElementById(element).style.display = 'block';
+                    }
+                    reader.readAsDataURL(data.files[0]);
+                }
+            }
+
+            const visibility = document.getElementById("visibility");
+            visibility.onchange = () => {
+                if (visibility.value === "private"){
+                    document.getElementById('password').style.visibility = 'visible'
+                } else {
+                    document.getElementById('password').sytle.visibility = 'hidden'
+                }
+            }
+        </script>
+    </body>
+</html>
