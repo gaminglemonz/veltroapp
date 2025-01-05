@@ -31,20 +31,10 @@ app.set('port', port);
 
 async function main() {
     const db = await open({
-        filename: '../var/db/chat.db',
+        filename: '../var/db/veltro.db',
         driver: sqlite3.Database,
     });
 
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            client_offset TEXT UNIQUE,
-            content TEXT,
-            username TEXT,
-            time TEXT,
-            type TEXT
-        );
-    `);
     const sessionMiddleware = session({
         secret: process.env.SECRET_KEY || "changeit",
         resave: false,
@@ -78,35 +68,21 @@ async function main() {
 
     io.on('connection', async (socket) => {
         const username = socket.handshake.query.username;
+        const roomId = socket.handshake.query.roomId, roomName = socket.handshake.query.roomName;
         const timestamp = new Date().toISOString();
 
-        console.log(`${username} connected`);
-        io.emit('user joined', username);
+        socket.join(roomId);
+        console.log(`${username} connected to room ${roomId} (${roomName}) at ${timestamp}`);
+        io.to(roomId).emit('user joined', username);
 
-        try {
-            const rows = await db.all('SELECT * FROM messages');
-            const loadedMessages = rows.map(row => ({
-                username: row.username,
-                content: row.content,
-                time: row.time,
-            }));
-
-            socket.emit('load messages', loadedMessages);
-        } catch (err) {
-            console.error("Error getting messages:", err);
-        }
 
         socket.on('message', async (data) => {
-            const { user, msg, time } = data;
-
-            try {
-                await db.run('INSERT INTO messages (username, content, type, time) VALUES (?, ?, ?, ?)', [user, msg, 'default', time]);
-            } catch (err) {
-                console.error("Error saving message:", err.message);
-            }
-
-            console.log(`<${user}> ${msg}`);
-            io.emit('message', { user, msg });
+            const { roomId, user, avatar, msg } = data;
+            const timestamp = new Date().toISOString();
+            await db.run('INSERT INTO messages (room_id, avatar, content, username, timestamp) VALUES (?, ?, ?, ?, ?)', 
+                [roomId, avatar, msg, user, timestamp]);
+            await db.run('UPDATE rooms SET messageCount = messageCount + 1 WHERE id = ?', [roomId]);
+            io.to(roomId).emit('message', { user, msg, avatar, timestamp });
         });
 
         socket.on('ping', () => {
@@ -117,8 +93,8 @@ async function main() {
         });
 
         socket.on('disconnect', async () => {
-            console.log(`${username} disconnected`);
-            io.emit('user left', username);
+            console.log(`${username} disconnected from room ${roomId} (${roomName}) at ${timestamp}`);
+            io.to(roomId).emit('user left', username);
         });
     });
 

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <meta type="description" content="Chat with friends and family in real-time.">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+    <title><%= room.name %></title>
+
+    <script src="https://cdn.tailwindcss.com"></script> <!-- TailwindCSS CDN -->
+    <script src="/socket.io/socket.io.js"></script> <!-- Load Socket.io -->
+</head>
+<body class="dark:bg-slate-900 dark:text-white p-12">
+    <div id="messages" class="mb-48">
+    </div>
+    <form id="form" action="" class="fixed bottom-0 left-0 p-12 backdrop-blur shadow-lg w-full">
+        <input id="input" autocomplete="off" placeholder="send a message..." class="focus:outline-none dark:bg-slate-600 dark:text-white text-black p-5 rounded-md w-[95%]"/>
+        <button id="send-button" type="submit" class="material-icons bg-black text-white text-center font-bold p-5 rounded-full disabled:opacity-30" disabled>send</button>
+    </form>
+    <div id="control-panel" class="flex fixed top-0 right-0 p-12">
+        <i class="material-symbols-outlined font-bold cursor-pointer mx-6 text-2xl">info</i>
+        <i class="material-icons font-bold cursor-pointer mx-6 text-2xl">groups</i>
+    </div>
+    <data prev-messages="<%= JSON.stringify(messages) %>"></data>
+    <%- include('header.ejs') %>
+    <script>
+
+        const username = "<%= user.username %>";
+        const avatar = "/avatar/<%= user.id %>";
+        const roomId = "<%= room.id %>";
+        const roomName = "<%= room.name %>";
+        const socket = io({
+            query: { username,  roomId, roomName, avatar },
+            auth: { serverOffset: 0 },
+        });
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+        const send_button = document.getElementById('send-button');
+        
+        const prevMessages = JSON.parse(document.querySelector('data').getAttribute('prev-messages'));
+
+        let startPing;
+        let lastMessageSender = null;
+
+        const appendMessage = (user, pfp, message, isCurrentUser) => {
+            const newMessage = document.createElement('div');
+            const bgColor = isCurrentUser ? 'bg-sky-200' : 'bg-gray-400';
+            newMessage.classList = "my-3";
+
+            const showUsername = user !== lastMessageSender;
+
+            if (showUsername) {
+                newMessage.innerHTML = `
+                    <span class="text-gray-500 text-md dark:text-gray-200 username"><img src="${pfp}" alt="${user}'s Avatar" width="30" class="inline cursor-pointer rounded-full"> ${user}</span>
+                    <p class="my-2 text-black text-xl ${bgColor} p-4 w-fit rounded-xl">${message}</p>`;
+            } else {
+                newMessage.innerHTML = `
+                    <p class="my-2 text-black text-xl ${bgColor} p-4 w-fit rounded-xl">${message}</p>`;
+            }
+
+            messages.appendChild(newMessage);
+            lastMessageSender = user;
+        };
+        const appendSystemMessage = (message, bgColor) => {
+            const newMessage = document.createElement('div');
+            newMessage.textContent = message;
+            newMessage.classList = `${bgColor} p-5 text-black text-lg font-bold w-fit rounded-xl my-7`;
+            messages.appendChild(newMessage);
+        };
+        const scrollMessages = () => {
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        prevMessages.forEach(msg => {
+            console.log('Loading previous message:', msg);
+            appendMessage(msg.username, msg.avatar, msg.content, msg.username === username);
+        });
+
+        socket.off('pong');
+        socket.off('load messages');
+        socket.off('message');
+        socket.off('user joined');
+        socket.off('user left');
+
+        socket.on('message', (data) => {
+            appendMessage(data.user, data.avatar, data.msg, data.user === username);
+            scrollMessages();
+        });
+
+        socket.on('pong', () => {
+            const ping = Date.now() - startPing;
+            console.log(`Recorded ping of ${ping}ms`);
+            appendSystemMessage(`Ping: ${ping}ms`, 'bg-blue-200');
+            socket.emit('recorded ping', ping);
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value.trim() && input.value.length < 200) {
+                if (input.value.startsWith('$')) {
+                    const command = input.value.slice(1).toLowerCase();
+                    if (commands[command]) {
+                        commands[command]();
+                    } else {
+                        appendSystemMessage(`Unknown command: ${command}`, 'bg-red-200');
+                    }
+                } else {
+                    socket.emit('message', { roomId, avatar, user: username, msg: input.value.trim() });
+                }
+                input.value = '';
+                send_button.disabled = true;
+            }
+        });
+        input.addEventListener('input', () => {
+            send_button.disabled = input.value.trim().length < 1;
+        });
+
+    </script>
+</body>
+</html>
