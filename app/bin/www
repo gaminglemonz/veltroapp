@@ -81,6 +81,7 @@ async function main() {
             const timestamp = new Date().toISOString();
             await db.run('INSERT INTO messages (room_id, avatar, content, username, timestamp) VALUES (?, ?, ?, ?, ?)', 
                 [roomId, avatar, msg, user, timestamp]);
+            await db.run('UPDATE rooms SET messageCount = messageCount + 1 WHERE id = ?', [roomId]);
             io.to(roomId).emit('message', { user, msg, avatar, timestamp });
         });
 

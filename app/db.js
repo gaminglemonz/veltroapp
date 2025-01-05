@@ -80,7 +80,9 @@ db.serialize(() => {
       icon BLOB,
       banner BLOB,
       visibility TEXT,
-      type TEXT
+      type TEXT,
+      memberCount INTEGER,
+      messageCount INTEGER
     )`,
     (err) => {
       if (err) {
