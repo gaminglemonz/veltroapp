@@ -10,26 +10,99 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
 
-    <title><%= room.name %></title>
+    <title><%= room.name %> | Veltro</title>
 
     <script src="https://cdn.tailwindcss.com"></script> <!-- TailwindCSS CDN -->
     <script src="/socket.io/socket.io.js"></script> <!-- Load Socket.io -->
+
+    <style>
+        .messages-wrapper {
+            height: calc(100vh - 144px);
+            position: relative;
+            z-index: 20;
+        }
+        #messages {
+            height: 100%;
+            overflow-y: auto;
+        }
+        #messages::-webkit-scrollbar {
+            width: 8px;
+            z-index: 30;
+        }
+        #messages::-webkit-scrollbar-track {
+            background: transparent;
+            z-index: 30;
+        }
+        #messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            z-index: 30;
+        }
+        #form {
+            z-index: 10;
+        }
+    </style>
 </head>
-<body class="dark:bg-slate-900 dark:text-white p-12">
-    <div id="messages" class="mb-48">
+<body class="dark:bg-slate-900 dark:text-white h-screen overflow-hidden">
+    <div class="messages-wrapper">
+        <div id="messages" class="px-12">
+            <div id="typing" class="hidden">
+                <span class="animate-ping w-full h-full bg-slate-500"></span>
+            </div>
+        </div>
     </div>
-    <form id="form" action="" class="fixed bottom-0 left-0 p-12 backdrop-blur shadow-lg w-full">
+    <form id="form" action="" class="fixed bottom-0 left-0 p-12 bg-transparent backdrop-blur-md shadow-lg w-full">
         <input id="input" autocomplete="off" placeholder="send a message..." class="focus:outline-none dark:bg-slate-600 dark:text-white text-black p-5 rounded-md w-[95%]"/>
         <button id="send-button" type="submit" class="material-icons bg-black text-white text-center font-bold p-5 rounded-full disabled:opacity-30" disabled>send</button>
     </form>
-    <div id="control-panel" class="flex fixed top-0 right-0 p-12">
-        <i class="material-symbols-outlined font-bold cursor-pointer mx-6 text-2xl">info</i>
-        <i class="material-icons font-bold cursor-pointer mx-6 text-2xl">groups</i>
+    <div id="control-panel" class="select-none flex fixed top-10 right-10 p-6 bg-black bg-opacity-35 backdrop-blur-md rounded-xl z-50">
+        <i class="material-symbols-outlined font-bold cursor-pointer mx-3 text-4xl hover:text-gray-300 transition-colors" id="toggle-info">info</i>
+        <i class="material-icons font-bold cursor-pointer mx-3 text-4xl hover:text-gray-300 transition-colors" id="toggle-members">groups</i>
+    </div>
+
+    <div id="members-panel" class="bg-black bg-opacity-35 backdrop-blur-md fixed top-40 !-right-96 right-10 px-16 py-10 z-10 rounded-xl transition-all">
+        <h2 class="font-bold text-3xl">People</h2>
+        <% members.forEach(member => { %>
+            <div class="flex items-center my-10">
+                <img src="<%= member.avatar %>" alt="<%= member.username %>'s Avatar" width="30" class="mr-3 rounded-full">
+                <span class="text-gray-500 text-md dark:text-gray-200 username"><%= member.username %></span>
+            </div>
+        <% }); %>
+    </div>
+    <div id="info" class="bg-black bg-opacity-35 backdrop-blur-md fixed top-40 !-right-96 right-10 px-16 py-10 z-10 rounded-xl transition-all">
+        <h2 class="font-bold text-3xl mb-7">Additional Info</h2>
+
+        <h3 class="font-bold text-2xl my-2">Room Name</h3>
+        <p class="font-bold text-xl mb-7"><%= room.name %></p>
+
+        <h3 class="font-bold text-2xl my-2">Owner</h3>
+        <p class="font-bold text-xl"><%= room.owner %></p>
+
+        <h3 class="font-bold text-2xl my-2">Description</h3>
+        <p class="font-bold text-xl"><%= room.description %></p>
     </div>
     <data prev-messages="<%= JSON.stringify(messages) %>"></data>
     <%- include('header.ejs') %>
     <script>
-
+        const panels = ['members-panel', 'info'];
+        const openPanel = (panel) => {
+            panels.forEach(p => {
+                if (p !== panel) {
+                    document.getElementById(p).classList.add('!-right-96');
+                }
+            });
+            document.getElementById(panel).classList.toggle('!-right-96');
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById(panel).contains(e.target) && !document.getElementById('control-panel').contains(e.target)) {
+                    document.getElementById(panel).classList.add('!-right-96');
+                }
+            })
+        };
+        document.getElementById('toggle-info').addEventListener('click', () => openPanel('info'));
+        document.getElementById('toggle-members').addEventListener('click', () => openPanel('members-panel'));
+    </script>
+    </script> <!-- Control Panel -->
+    <script>
         const username = "<%= user.username %>";
         const avatar = "/avatar/<%= user.id %>";
         const roomId = "<%= room.id %>";
@@ -75,12 +148,24 @@
             messages.appendChild(newMessage);
         };
         const scrollMessages = () => {
-            messages.scrollTop = messages.scrollHeight;
+            const messagesDiv = document.getElementById('messages-wrapper');
+            if (!messagesDiv) {
+                console.error('Messages container not found');
+                return;
+            }
+            
+            setTimeout(() => {
+                messagesDiv.scrollTo({
+                    top: messagesDiv.scrollHeight + 100,
+                    behavior: 'smooth'
+                });
+            }, 50);
         };
 
         prevMessages.forEach(msg => {
             console.log('Loading previous message:', msg);
             appendMessage(msg.username, msg.avatar, msg.content, msg.username === username);
+            scrollMessages();
         });
 
         socket.off('pong');
@@ -91,6 +176,10 @@
 
         socket.on('message', (data) => {
             appendMessage(data.user, data.avatar, data.msg, data.user === username);
+            scrollMessages();
+        });
+        socket.on('user typing', (data) => {
+            document.getElementById('typing').classList.toggle('hidden');
             scrollMessages();
         });
 
@@ -120,8 +209,9 @@
         });
         input.addEventListener('input', () => {
             send_button.disabled = input.value.trim().length < 1;
+            socket.emit('user typing', { roomId, user: username });
         });
-
+        scrollMessages();
     </script>
 </body>
 </html>

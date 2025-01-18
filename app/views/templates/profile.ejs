@@ -1,92 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="en" class="dark">
+<head>
     <meta charset="UTF-8" />
     <title><%= user.username %>'s Profile | Veltro</title>
-
-    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
-
-    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?&family=Poppins" rel="stylesheet" />
-  </head>
-  <body class="dark p-10 font-Poppins dark:bg-slate-800 dark:text-white">
+    <link href="https://fonts.googleapis.com/css2?&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="dark font-Poppins dark:bg-slate-900 dark:text-white">
     <%- include('header.ejs') %>
 
-    <section id="navbar" class="text-4xl flex justify-center items-center mb-12">
-      <h2 class="font-bold">Profile</h2>
-    </section>
+    <!-- Hero Section -->
+    <div class="relative h-64 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div class="absolute bottom-0 left-0 right-0 px-8 py-4 bg-black bg-opacity-40">
+            <div class="flex items-end space-x-6">
+                <img src="/avatar/<%= user.id %>" alt="Profile Picture" 
+                     class="w-32 h-32 rounded-full border-4 border-white transform -translate-y-16">
+                <div class="pb-4">
+                    <h1 class="text-4xl font-bold text-white"><%= user.username %></h1>
+                    <p class="text-gray-300">Joined <%= new Date(user.created_at).toLocaleDateString() %></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <main class="max-w-4xl mx-auto my-[5%] py-10 px-6">
-      <!-- Avatar Section -->
-      <div class="flex justify-center items-center mb-8">
-        <% if (user.avatar) { %>
-          <img src="/avatar/<%= user.id %>" alt="Avatar" class="w-32 h-32 rounded-full object-cover mr-4" />
-        <% } else { %>
-          <img src="/images/default-pfp.png" alt="Default Avatar" class="w-32 h-32 rounded-full object-cover mr-4" />
-        <% } %>
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- User Stats -->
+                <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4">Statistics</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Messages</span>
+                            <span class="font-medium"><%= user.messageCount || 0 %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Rooms</span>
+                            <span class="font-medium"><%= user.roomCount || 0 %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Friends</span>
+                            <span class="font-medium"><%= user.friendCount || 0 %></span>
+                        </div>
+                    </div>
+                </div>
 
-        <form action="/upload-avatar" method="POST" enctype="multipart/form-data" class="flex flex-col items-center">
-          <label for="avatar" class="cursor-pointer text-white">Upload Avatar</label>
-          <input type="file" name="avatar" accept="image/*" class="block mt-2 text-sm text-white dark:bg-slate-600 focus:outline-none font-regular border-gray-300 rounded-lg my-4 p-2"/>
-          <button type="submit" class="bg-blue-600 text-white rounded-md py-2 px-4 mt-2">Upload</button>
-        </form>
+                <!-- Quick Actions -->
+                <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+                    <div class="space-y-3">
+                        <button class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                            Edit Profile
+                        </button>
+                        <button class="w-full bg-slate-700 text-white py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">
+                            Manage Rooms
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Right Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- About -->
+                <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4">About</h2>
+                    <p class="text-gray-300"><%= user.bio || 'No bio yet.' %></p>
+                </div>
 
-      </div>
+                <!-- Recent Activity -->
+                <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
+                    <div class="space-y-4">
+                        <% const activities = user.activities || [] %>
+                        <% if (activities.length === 0) { %>
+                            <p class="text-gray-400">No recent activity.</p>
+                        <% } else { %>
+                            <% activities.forEach(activity => { %>
+                                <div class="flex items-center space-x-4 p-3 rounded-lg bg-slate-700">
+                                    <i class="material-icons text-indigo-400"><%= activity.icon %></i>
+                                    <div>
+                                        <p class="text-sm text-gray-300"><%= activity.description %></p>
+                                        <p class="text-xs text-gray-400"><%= activity.timestamp %></p>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
 
-      <!-- Username Section -->
-      <div class="flex justify-center items-center mb-10" id="usernameEditor">
-        <h2 id="username" class="font-bold text-3xl leading-normal mr-4">
-          <%= user.username %>
-        </h2>
-        <i onclick="toggleEditUsername('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
-      </div>
-
-      <!-- Email Section -->
-      <div class="flex justify-center items-center mb-10">
-        <h3 class="font-bold text-2xl"><%= user.email %></h3>
-      </div>
-
-      <!-- Script to toggle username edit form -->
-      <script>
-        const username = document.getElementById("usernameEditor");
-        const toggleEditUsername = (type) => {
-          switch (type) {
-            case "edit":
-              username.innerHTML = `
-                <form action="/update-username" method="POST">
-                  <label class="block font-bold text-xl" for="new-username">Username</label>
-                  <input
-                    class="block dark:bg-slate-600 dark:text-white focus:outline-none font-regular text-xl border-gray-300 rounded-lg my-4 p-2"
-                    value="<%= user.username %>"
-                    name="username"
-                    type="text"
-                    autocomplete="username"
-                    required
-                  />
-				  <button onclick='window.location.href="/profile"' class="bg-black font-bold text-lg text-white my-2 p-3 rounded-md inline">Cancel</button>
-                  <button type="submit" class="bg-black font-bold text-lg text-white my-2 mx-2 p-3 rounded-md inline">Done</button>
-                </form>
-              `;
-              break;
-            case "done":
-              username.innerHTML = `
-                <h2 id="username" class="font-bold text-3xl leading-normal mr-4">
-                  <%= user.username %>
-                </h2>
-                <i onclick="toggleEditUsername('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
-              `;
-              break;
-          }
-        };
-      </script>
-    </main>
-
-  </body>
+                <!-- Rooms -->
+                <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4">My Rooms</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <% const userRooms = user.rooms || [] %>
+                        <% if (userRooms.length === 0) { %>
+                            <p class="text-gray-400">No rooms yet.</p>
+                        <% } else { %>
+                            <% userRooms.forEach(room => { %>
+                                <div class="flex items-center space-x-3 p-3 rounded-lg bg-slate-700">
+                                    <img src="<%= room.icon %>" alt="Room Icon" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <h3 class="font-medium"><%= room.name %></h3>
+                                        <p class="text-sm text-gray-400"><%= room.memberCount %> members</p>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
 </html>

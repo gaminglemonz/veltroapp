@@ -33,7 +33,6 @@ db.serialize(() => {
       name TEXT,
       email TEXT UNIQUE,
       email_verified INTEGER,
-      status TEXT,
       avatar BLOB
     )`,
     (err) => {
@@ -68,7 +67,10 @@ db.serialize(() => {
         name TEXT,
         room_id INTEGER,
         username TEXT,
-        FOREIGN KEY (room_id) REFERENCES rooms(id)
+        status TEXT,
+        avatar BLOB,
+        FOREIGN KEY (room_id) REFERENCES rooms(id),
+        UNIQUE (room_id, username)
     )`
   )
   db.run(
@@ -81,8 +83,8 @@ db.serialize(() => {
       banner BLOB,
       visibility TEXT,
       type TEXT,
-      memberCount INTEGER,
-      messageCount INTEGER
+      memberCount INTEGER DEFAULT 0,
+      messageCount INTEGER DEFAULT 0
     )`,
     (err) => {
       if (err) {
@@ -126,6 +128,14 @@ db.serialize(() => {
       }
     }
   );
+
+  db.run(`UPDATE rooms SET messageCount = (SELECT COUNT(*) FROM messages WHERE messages.room_id = rooms.id)`, (err) => {
+    if (err) {
+      console.error('Error updating message count:', err.message);
+    } else {
+      console.log('Message count updated successfully.');
+    }
+  });
 });
 
 module.exports = db;

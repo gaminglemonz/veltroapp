@@ -8,6 +8,7 @@ const path = require('path');
 const db = new sqlite3.Database('../var/db/veltro.db');
 const router = express.Router();
 const { promisify } = require('util');
+const { arrayBuffer } = require("stream/consumers");
 
 async function loadFileType() {
     const FileType = await import('file-type');
@@ -58,6 +59,8 @@ const extractRooms = async () => {
             banner: room.banner,
             visiblity: room.visibility,
             type: room.type,
+            messageCount: room.messageCount,
+            memberCount: room.memberCount,
         }));
         // console.log('Processed Rooms:', rooms);
     } catch (error) {
@@ -67,10 +70,19 @@ const extractRooms = async () => {
 };
 extractRooms();
 
+const addMemberToRoom = async (roomID, username, avatar) => {
+    try {
+        await db.runAsync('INSERT INTO room_members (room_id, username, avatar) VALUES (?, ?, ?)', [roomID, username, avatar]);
+    } catch (err) {
+        console.error('Error adding member to room:', err);
+    }
+};
 const getRoomMembers = async (roomID) => {
     try {
+        console.log('Getting room members for roomID:', roomID);
         const rows = await db.allAsync('SELECT * FROM room_members WHERE room_id = ?', [roomID]);
         console.log('Room Members:', rows);
+        await db.run('UPDATE rooms SET memberCount = ? WHERE id = ?', [rows.length, roomID]);
         return rows.map(member => ({
             id: member.id,
             username: member.username,
@@ -82,7 +94,6 @@ const getRoomMembers = async (roomID) => {
         return [];
     }
 };
-
 const getRoomMessages = async (roomID) => {
     try {
         // console.log('Messages from roomID', roomID)
@@ -96,6 +107,7 @@ const getRoomMessages = async (roomID) => {
             room_id: row.room_id,
         }));
         // console.log('Loaded Messages:', loadedMessages);
+        await db.run('UPDATE rooms SET messageCount = ? WHERE id = ?', [rows.length, roomID]);
         return loadedMessages;
     } catch (err) {
         console.error("Error getting messages:", err);
@@ -139,13 +151,17 @@ router.get('/room/:id/icon', async (req, res) => {
 });
 router.get('/rooms/:roomId', async (req, res) => {
     const { roomId } = req.params;
+    const avatar = '/avatar/' + req.user.id;
 
     try {
         const room = await db.getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
         const messages = await getRoomMessages(roomId);
+        const members = await getRoomMembers(roomId);
+
+        await addMemberToRoom(roomId, req.user.username, avatar);
 
         if (!room) return res.status(404).send('Room not found');
-        res.render('room', { user: req.user, room, messages, room_members: await getRoomMembers(roomId) });
+        res.render('room', { user: req.user, room, messages, members });
     } catch (err) {
         console.error('Error retrieving room:', err.message);
         res.status(500).send('Internal Server Error');

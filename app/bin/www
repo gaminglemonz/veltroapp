@@ -81,10 +81,13 @@ async function main() {
             const timestamp = new Date().toISOString();
             await db.run('INSERT INTO messages (room_id, avatar, content, username, timestamp) VALUES (?, ?, ?, ?, ?)', 
                 [roomId, avatar, msg, user, timestamp]);
-            await db.run('UPDATE rooms SET messageCount = messageCount + 1 WHERE id = ?', [roomId]);
+
             io.to(roomId).emit('message', { user, msg, avatar, timestamp });
         });
-
+        socket.on('user typing', async (data) => {
+            const { roomId, user } = data;
+            io.to(roomId).emit('user typing', user);
+        });
         socket.on('ping', () => {
             io.emit('pong');
         });

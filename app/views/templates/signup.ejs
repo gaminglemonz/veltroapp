@@ -5,8 +5,13 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 		<title>Login</title>
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+
+   		<!-- TailwindCSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<!-- Google Fonts -->
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		
 		<link rel="stylesheet" href="styles/bg.css">
 	</head>
 	<body class="p-10">
@@ -24,7 +29,8 @@
 				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="new-password" name='password' type='password' autocomplete='bew-password' required>
 				<button type="submit" class="bg-gray-200 font-bold text-xl my-2 p-5 rounded-md">Signup</button>
 			</form>
-			<p class="help">Already have an account? <a href="/login" class="font-bold">Login</a></p>
+			<p class="font-bold mt-4">Have an account?<a href="/login" class=" text-indigo-600"> Log back in</a></p>
+			<a href='/' class="font-bold cursor-pointer"><i class="material-icons mt-5 font-bold cursor-pointer mr-2" title="Back to Home">arrow_back</i></a>
 		</section>
 		<footer class="info text-white font-bold">
 			<p>Authentication powered by <a href="https://www.passportjs.org" target="_blank">Passport</a></p>
