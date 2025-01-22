@@ -101,9 +101,8 @@
         document.getElementById('toggle-info').addEventListener('click', () => openPanel('info'));
         document.getElementById('toggle-members').addEventListener('click', () => openPanel('members-panel'));
     </script>
-    </script> <!-- Control Panel -->
     <script>
-        const username = "<%= user.username %>";
+        const username = "<%= user.name %>";
         const avatar = "/avatar/<%= user.id %>";
         const roomId = "<%= room.id %>";
         const roomName = "<%= room.name %>";
@@ -132,7 +131,7 @@
             if (showUsername) {
                 newMessage.innerHTML = `
                     <span class="text-gray-500 text-md dark:text-gray-200 username"><img src="${pfp}" alt="${user}'s Avatar" width="30" class="inline cursor-pointer rounded-full"> ${user}</span>
-                    <p class="my-2 text-black text-xl ${bgColor} p-4 w-fit rounded-xl">${message}</p>`;
+                    <p class="my-2 text-black text-xl ${bgColor} p-4 w-fit rounded-tl-none rounded-lg">${message}</p>`;
             } else {
                 newMessage.innerHTML = `
                     <p class="my-2 text-black text-xl ${bgColor} p-4 w-fit rounded-xl">${message}</p>`;

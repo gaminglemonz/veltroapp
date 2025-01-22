@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title><%= user.username %>'s Profile | Veltro</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?&family=Poppins" rel="stylesheet" />
+  </head>
+  <body class="dark p-10 font-Poppins dark:bg-slate-800 dark:text-white">
+    <%- include('header.ejs') %>
+
+    <section id="navbar" class="text-4xl flex justify-center items-center mb-12">
+      <h2 class="font-bold">Profile</h2>
+    </section>
+
+    <main class="max-w-4xl mx-auto my-[5%] py-10 px-6">
+      <!-- Avatar Section -->
+      <div class="flex justify-center items-center mb-8">
+        <% if (user.avatar) { %>
+          <img src="/avatar/<%= user.id %>" alt="Avatar" class="w-32 h-32 rounded-full object-cover mr-4" />
+        <% } else { %>
+          <img src="/images/default-pfp.png" alt="Default Avatar" class="w-32 h-32 rounded-full object-cover mr-4" />
+        <% } %>
+
+        <form action="/upload-avatar" method="POST" enctype="multipart/form-data" class="flex flex-col items-center">
+          <label for="avatar" class="cursor-pointer text-white">Upload Avatar</label>
+          <input type="file" name="avatar" accept="image/*" class="block mt-2 text-sm text-white dark:bg-slate-600 focus:outline-none font-regular border-gray-300 rounded-lg my-4 p-2"/>
+          <button type="submit" class="bg-blue-600 text-white rounded-md py-2 px-4 mt-2">Upload</button>
+        </form>
+
+
+      </div>
+
+      <!-- Username Section -->
+      <div class="flex justify-center items-center mb-10" id="usernameEditor">
+        <h2 id="username" class="font-bold text-3xl leading-normal mr-4">
+          <%= user.username %>
+        </h2>
+        <i onclick="toggleEditUsername('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
+      </div>
+
+      <!-- Email Section -->
+      <div class="flex justify-center items-center mb-10">
+        <h3 class="font-bold text-2xl"><%= user.email %></h3>
+      </div>
+
+      <!-- Script to toggle username edit form -->
+      <script>
+        const username = document.getElementById("usernameEditor");
+        const toggleEditUsername = (type) => {
+          switch (type) {
+            case "edit":
+              username.innerHTML = `
+                <form action="/update-username" method="POST">
+                  <label class="block font-bold text-xl" for="new-username">Username</label>
+                  <input
+                    class="block dark:bg-slate-600 dark:text-white focus:outline-none font-regular text-xl border-gray-300 rounded-lg my-4 p-2"
+                    value="<%= user.username %>"
+                    name="username"
+                    type="text"
+                    autocomplete="username"
+                    required
+                  />
+				  <button onclick='window.location.href="/profile"' class="bg-black font-bold text-lg text-white my-2 p-3 rounded-md inline">Cancel</button>
+                  <button type="submit" class="bg-black font-bold text-lg text-white my-2 mx-2 p-3 rounded-md inline">Done</button>
+                </form>
+              `;
+              break;
+            case "done":
+              username.innerHTML = `
+                <h2 id="username" class="font-bold text-3xl leading-normal mr-4">
+                  <%= user.username %>
+                </h2>
+                <i onclick="toggleEditUsername('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
+              `;
+              break;
+          }
+        };
+      </script>
+    </main>
+
+  </body>
+</html>

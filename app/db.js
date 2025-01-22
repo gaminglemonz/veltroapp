@@ -27,13 +27,18 @@ db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,
+      name TEXT,
       username TEXT UNIQUE,
       hashed_password BLOB,
       salt BLOB,
-      name TEXT,
       email TEXT UNIQUE,
       email_verified INTEGER,
-      avatar BLOB
+      avatar BLOB,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      messageCount INTEGER DEFAULT 0,
+      friendCount INTEGER DEFAULT 0,
+      roomCount INTEGER DEFAULT 0,
+      notifications INTEGER DEFAULT 0
     )`,
     (err) => {
       if (err) {
@@ -43,6 +48,31 @@ db.serialize(() => {
       }
     }
   );
+  db.run(`
+    CREATE TABLE IF NOT EXISTS friends (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER,
+      friend_id INTEGER,
+      status TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (friend_id) REFERENCES users(id),
+      UNIQUE (user_id, friend_id)
+    )`, (err) => { 
+      if (err) {
+        console.error('Error creating friends table:', err.message);
+      } else {
+        console.log('Friends table created or already exists.');
+      }
+    })
+  db.run(`
+    CREATE TABLE IF NOT EXISTS friend_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      friend_id INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (friend_id) REFERENCES users(id)
+    )
+  `)
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +100,7 @@ db.serialize(() => {
         status TEXT,
         avatar BLOB,
         FOREIGN KEY (room_id) REFERENCES rooms(id),
-        UNIQUE (room_id, username)
+        UNIQUE (room_id, username, user_id)
     )`
   )
   db.run(
@@ -119,7 +149,7 @@ db.serialize(() => {
     (err) => {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
-          console.log('Room already exists. Skipping insertion.');
+          console.log('Example room already exists. Skipping insertion.');
         } else {
           console.error('Error inserting example room:', err.message);
         }
@@ -136,6 +166,15 @@ db.serialize(() => {
       console.log('Message count updated successfully.');
     }
   });
+
+  // Alter SQL Table Here
+  db.exec(`DROP TABLE messages`, (err) => {
+    if (err) {
+         console.error('Error altering database:', err.message);
+    } else {
+        console.log('Database successfully altered');
+    }
+}); 
 });
 
 module.exports = db;

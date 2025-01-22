@@ -57,6 +57,9 @@ app.get('/', (req, res) => {
 app.get('/profile', (req, res) => {
     res.render('profile', { user: req.user });
 });
+app.get('/dashboard', (req, res) => { 
+    res.render('dashboard', { user: req.user });
+});
 app.get('/rooms', (req, res) => {
     res.render('rooms', { user: req.user })
 });
