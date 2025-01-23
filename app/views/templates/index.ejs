@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <title>Veltro - Real-time Messaging Platform</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="m-0 font-[Poppins] dark:bg-slate-900 dark:text-white">
+    <% if (user) { %> <%- include('header.ejs') %> <% } %>
+
+    <!-- Hero Section -->
+    <section style="background-image: url('/images/parallax.jpg'); background-size: cover; background-attachment: fixed;" 
+             class="min-h-screen flex items-center justify-center relative">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="relative z-10 text-center px-4 sm:px-6 lg:px-8">
+            <h1 class="text-5xl md:text-5xl lg:text-7xl font-bold text-white mb-8">
+                Connect Instantly<br>
+                <span class="text-indigo-400">Anywhere, Anytime</span>
+            </h1>
+            <p class="text-xl sm:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto">
+                Experience real-time messaging with crystal-clear quality and unmatched security.
+            </p>
+            <div class="space-x-4">
+                <a href="/signup" class="inline-block bg-indigo-600 text-white font-semibold px-8 py-4 rounded-lg transform transition duration-300 hover:scale-105 hover:bg-indigo-700">Get Started Free</a>
+                <a href="/login" class="inline-block bg-white text-slate-900 font-semibold px-8 py-4 rounded-lg transform transition duration-300 hover:scale-105 hover:bg-gray-100">Sign In</a>
+            </div>
+        </div>
+		<i id="scroll" class="material-icons rounded-full absolute top-[85%]  p-4
+		bg-transparent text-white text-4xl text-center
+		transition-all duration-300 hover:bg-gray-400 hover:bg-opacity-35 cursor-pointer select-none">keyboard_arrow_down</i>
+    </section>
+
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-800 select-none">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16">Why Choose Veltro?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="text-center p-6 rounded-xl bg-slate-700 transform transition duration-300 hover:scale-105">
+                    <i class="material-icons text-5xl text-indigo-400 mb-4">speed</i>
+                    <h3 class="text-xl font-semibold mb-4">Lightning Fast</h3>
+                    <p class="text-gray-300">Real-time messaging with minimal latency</p>
+                </div>
+                <div class="text-center p-6 rounded-xl bg-slate-700 transform transition duration-300 hover:scale-105">
+                    <i class="material-icons text-5xl text-indigo-400 mb-4">security</i>
+                    <h3 class="text-xl font-semibold mb-4">Secure</h3>
+                    <p class="text-gray-300">End-to-end encryption for your privacy</p>
+                </div>
+                <div class="text-center p-6 rounded-xl bg-slate-700 transform transition duration-300 hover:scale-105">
+                    <i class="material-icons text-5xl text-indigo-400 mb-4">devices</i>
+                    <h3 class="text-xl font-semibold mb-4">Cross Platform</h3>
+                    <p class="text-gray-300">Available on all your devices</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900 w-full" id="download">
+		<h2 class="text-3xl sm:text-4xl font-bold text-center mb-16">Get The App</h2>
+		<a download href='error.ejs' class="mx-auto table p-7 rounded-2xl font-bold 
+        text-xl text-white bg-indigo-600 hover:bg-indigo-700 transition transform duration-500 hover:scale-105">
+			Download for <img src='' id="OS-icon" width="20" class="inline mx-2"> <span id='OS'></span>
+		</a>
+		<p class="text-center font-bold text-gray-400 mt-7 cursor-pointer" id="alt-downloads">Other options...</p>
+    </section>
+
+	<section id='download-options' class="fixed top- bg-slate-900 hidden py-20 px-4 sm:px-6 lg:px-8">
+		<h1 class="font-bold md:text-5xl lg:text-7xl mb-16">Other Download Options</h1>
+	</section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto text-center">
+            <img src="/images/veltro.png" alt="Veltro Logo" class="h-12 mx-auto mb-6">
+            <p class="text-gray-400">&copy; 2024 Veltro. All rights reserved.</p>
+        </div>
+    </footer>
+
+	<script>
+		document.getElementById('scroll').addEventListener('click', () => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' }));
+	</script>
+	<script>
+		document.getElementById('alt-downloads').addEventListener('click', () => document.getElementById('download-options').classList.remove('hidden'));
+		document.getElementById('close-alt-downloads').addEventListener('click', () => document.getElementById('download-options').classList.add('hidden'));
+	</script>
+	<script>
+		const systemIcons = {
+			'Windows': 'images/windows.png',
+			'Mac': 'images/apple.png',
+			'iOS': 'images/apple.png',
+			'Android': 'images/android.png',
+			'Linux': 'images/linux.png',
+            'Chrome': 'images/chrome.png',
+		};
+		const detectOS = () => {
+			const userAgent = window.navigator.userAgent;
+            let os;
+            if (userAgent.includes('Windows')) {
+                os = 'Windows';
+            } else if (userAgent.includes('Mac')) {
+                os = 'Mac';
+            } else if (userAgent.includes('Linux')) {
+                os = 'Linux';
+                os = 'Android';
+            } else if (userAgent.includes('iOS')) {
+                os = 'iOS';
+            } else if (userAgent.includes('Chrome')) {
+                os = 'Chrome';
+            } else {
+                os = 'Linux';
+            }
+            return os;
+		}
+		const userOS = detectOS();
+		document.getElementById('OS').textContent = userOS;
+		document.getElementById('OS-icon').src = systemIcons[userOS];
+	</script>
+</body>
+</html>

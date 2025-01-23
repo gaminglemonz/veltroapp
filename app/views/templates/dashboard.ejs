@@ -116,7 +116,11 @@
                     </div>
                 </div>
             </div>
+<<<<<<< HEAD:views/templates/dashboard.ejs
             <div id="friends" class="bg-slate-800 px-12 pt-10 pb-16 rounded-xl mt-8 overflow-x-hidden">
+=======
+            <div id="friend-requests" class="bg-slate-800 px-12 pt-10 pb-16 rounded-xl mt-12 overflow-x-hidden">
+>>>>>>> 104b7df66ea240a1e885304bad8b23862dcded1e:app/views/templates/dashboard.ejs
                 <h2 class="text-3xl font-bold mb-8">Friends</h2>
 
                 <nav>
@@ -145,7 +149,12 @@
                     <% } %>
                 </div>
             </div>
+<<<<<<< HEAD:views/templates/dashboard.ejs
  
+=======
+
+        <!-- Edit Profile -->
+>>>>>>> 104b7df66ea240a1e885304bad8b23862dcded1e:app/views/templates/dashboard.ejs
         <div class="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 backdrop-blur-md 
         w-fit max-w-fit rounded-xl h-fit max-h-fit justify-center items-center py-24 px-32 hidden" id="editProfile">
             <h2 class="font-bold text-5xl text-center relative -top-12">Edit Profile</h2>
@@ -302,6 +311,7 @@
         </script>
         <script>
             const tabs = document.getElementsByClassName('tab');
+<<<<<<< HEAD:views/templates/dashboard.ejs
             const navLinks = document.getElementsByClassName('nav-link');
             let currentIndex = 0;
 
@@ -391,5 +401,17 @@
             font-weight: bold;
             }
         </style>
+=======
+            const nav = (index) => {
+                for (let i = 0; i < tabs.length; i++) {
+                    tabs[i].classList.add('hidden');
+                    document.getElementsByClassName('nav-link')[index-1].classList.remove('font-bold bg-slate-600 bg-opacity-35');
+                }
+                tabs[index-1].classList.remove('hidden');
+                document.getElementsByClassName('nav-link')[index-1].classList.add('font-bold bg-slate-600 bg-opacity-35');
+            }
+            nav(1)
+        </script>
+>>>>>>> 104b7df66ea240a1e885304bad8b23862dcded1e:app/views/templates/dashboard.ejs
     </body>
 </html>
