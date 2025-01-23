@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Veltro</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <main class="py-48 px-24">
+        <h1 class="text-5xl font-bold">Profile</h1>
+
+        <h2 class="font-bold text-3xl my-10"><%= user.username %> <span class="p-2 mx-4 rounded-full bg-black text-white text-xl font-bold"><%= user.status %></span></h2>
+        <h3 class="font-bold text-2xl my-10"><%= user.email %></h3>
+    </main>
+</body>
+</html>

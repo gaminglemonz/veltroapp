@@ -4,27 +4,71 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<title>Login</title>
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+		<title>Signup</title>
+
+   		<!-- TailwindCSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<!-- Google Fonts -->
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		
 		<link rel="stylesheet" href="styles/bg.css">
 	</head>
 	<body class="p-10">
-		<section class="prompt my-[150px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
-			<form action="/signup" method="POST">
-				<h3 class="text-center text-4xl font-bold my-4">Signup</h3>
+		<section class="prompt my-[150px] mx-auto py-10 px-36 shadow-lg w-fit max-w-fit rounded-lg bg-white overflow-hidden">
+			<form action="/signup" method="POST" class="relative -left-16">
+				<h3 class="text-3xl font-bold mt-4 mb-5">Signup</h3>
 				
-				<label class="block font-bold text-2xl" for="email">Email</label>
+				<label class="block font-bold text-xl" for="email">Email</label>
 				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="email" name="email" type="text" autocomplete="username" required>
 
-				<label class="block font-bold text-2xl" for="username">Username</label>
+				<label class="block font-bold text-xl" for="name">Name</label>
+				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="name" name="name" type="text" autocomplete="name" required>
+
+				<label class="block font-bold text-xl" for="username">Username</label>
 				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="username" name="username" type="text" autocomplete="username" required>
 				
-				<label class="block font-bold text-2xl" for="new-password">Password</label>
+				<label class="block font-bold text-xl" for="new-password">Password</label>
 				<input class="block border border-gray-300 rounded-lg my-4 p-2" id="new-password" name='password' type='password' autocomplete='bew-password' required>
 				<button type="submit" class="bg-gray-200 font-bold text-xl my-2 p-5 rounded-md">Signup</button>
+
+				<div class="float-right grid grid-cols-4 grid-rows-2 gap-4">
+					<div class="border-gray-400 border rounded-lg p-3 flex items-center justify-center">
+						<a href="/login/federated/google" class="flex items-center justify-center">
+							<img src="images/google.png" alt="Google" class="w-[30px] h-[30px] object-contain">
+						</a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3 flex items-center justify-center">
+						<a class="flex items-center justify-center">
+							<img src="images/discord.png" alt="Discord" class="w-[30px] h-[30px] object-contain">
+						</a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/facebook.png" width="30"></a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/twitter.png" width="30"></a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/apple_black.png" width="30"></a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/microsoft.png" width="30"></a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/twitch.png" width="30"></a>
+					</div>
+					<div class="border-gray-400 border rounded-lg p-3">
+						<a><img src="images/github.png" width="30"></a>
+					</div>
+				</div>
+				<div class="bg-gray-300 rounded-md py-1 px-[270px] transform -translate-y-[92px] scale-x-[.9] rotate-90 float-right clear-both"></div>
+
 			</form>
-			<p class="help">Already have an account? <a href="/login" class="font-bold">Login</a></p>
+			<div class="relative -left-16">
+				<p class="font-bold mt-4">Have an account?<a href="/login" class=" text-indigo-600"> Log back in</a></p>
+				<a href='/' class="font-bold cursor-pointer"><i class="material-icons mt-5 font-bold cursor-pointer mr-2" title="Back to Home">arrow_back</i></a>
+			</div>
 		</section>
 		<footer class="info text-white font-bold">
 			<p>Authentication powered by <a href="https://www.passportjs.org" target="_blank">Passport</a></p>

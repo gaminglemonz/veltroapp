@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="UTF-8" />
+      <title>Veltro</title>
+
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+
+      <!-- TailwindCSS -->
+      <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Google Fonts -->
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+      <!-- Favicon -->
+      <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  </head>
+  <%- include('header.ejs') %>
+  <body class="p-10 font-Poppins">
+      <div id="messages" class="mb-48 my-60"></div>
+      <button id="toggle-connection" class="bg-black p-4 text-white font-bold fixed right-[22rem] top-3 rounded-md select-none cursor-pointer">Connect</button>
+      <form id="form" action="" class="fixed bottom-0 left-0 p-10 bg-black backdrop-blur shadow-lg w-full">
+          <input id="input" autocomplete="off" placeholder="send a message..." class="p-5 rounded-md w-full"/>
+          <button class="bg-gray-500 text-white p-5 rounded-md">Send</button>
+      </form>
+
+      <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script> <!-- Load socket.io script -->>
+      <script>
+          let connected = false;
+          let socket;
+          const connection = document.getElementById('toggle-connection');
+          const form = document.getElementById('form');
+          const input = document.getElementById('input');
+          const messages = document.getElementById('messages');
+          const username = "<%= user.username || user.name || 'Guest' %>";
+        
+          const toggle_connection = () => {
+            if (connected) {
+              socket.emit('user left', username);
+              socket.disconnect();
+              connection.textContent = "Connect";
+              connected = false;
+            } else {
+              socket = io({
+                query: { username },
+                auth: { serverOffset: 0 }
+              });
+        
+              socket.on('disconnect', () => {
+                const newMessage = document.createElement('div');
+                newMessage.innerHTML = 'You have disconnected, or the server restarted.';
+                newMessage.classList = "mx-full bg-red-200 p-5 text-black text-lg font-bold w-fit rounded-xl my-7";
+                messages.appendChild(newMessage);
+                window.scroll({ top: document.body.scrollHeight, behavior: 'smooth' });
+              });
+        
+              socket.on('chat message', (data) => {
+                const newMessage = document.createElement('div');
+                newMessage.innerHTML = `<b>&lt${data.username}&gt</b> ${data.msg}`;
+
+                if (data.username === username) {
+                    newMessage.classList = "bg-sky-200 p-5 text-black text-left text-lg font-bold w-fit rounded-xl my-7 ml-auto"; // Use ml-auto for right alignment
+                } else {
+                    newMessage.classList = "bg-gray-200 p-5 text-black text-lg font-bold w-fit rounded-xl my-7";
+                }
+
+
+                messages.appendChild(newMessage);
+                window.scroll({ top: document.body.scrollHeight, behavior: 'smooth' });
+              });
+        
+              socket.on('user joined', (user) => {
+                const newMessage = document.createElement('div');
+                newMessage.innerHTML = `${user} has joined`;
+                newMessage.classList = "bg-green-200 p-5 text-black text-lg font-bold w-fit rounded-xl my-7";
+                messages.appendChild(newMessage);
+                window.scroll({ top: document.body.scrollHeight, behavior: 'smooth' });
+              });
+        
+              socket.on('user left', (user) => {
+                const newMessage = document.createElement('div');
+                newMessage.innerHTML = `${msg} has left`;
+                newMessage.classList = "bg-red-200 p-5 text-black text-lg font-bold w-fit rounded-xl my-7";
+                messages.appendChild(newMessage);
+                window.scroll({ top: document.body.scrollHeight, behavior: 'smooth' });
+              });
+              
+              socket.emit('user joined', user);
+              connection.textContent = "Disconnect";
+              connected = true;
+            }
+          };
+        
+          connection.addEventListener('click', toggle_connection);
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!connected){
+              toggle_connection();
+            }
+            if (input.value && connected) {
+              socket.emit('chat message', { msg: input.value, username: username });
+              input.value = '';
+            }
+            window.scroll({ top: document.body.scrollHeight, left: 0, behavior: 'smooth' });
+          });
+
+          if (input.value > 0 && input.value !== ' ') {
+            socket.emit('user typing');
+          }
+        </script> <!-- Messaging Functionality -->
+      <script>
+
+      </script>
+  </body>
+</html>

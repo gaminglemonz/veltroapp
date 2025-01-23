@@ -25,10 +25,18 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-  secret: 'keyboard cat',
-  resave: false,
-  saveUninitialized: false,
-  store: new SQLiteStore({ db: 'sessions.db', dir: '../var/db' })
+    store: new SQLiteStore({
+        dir: '../var/db',
+        db: 'sessions.db',
+        table: 'sessions'
+    }),
+    secret: process.env.SESSION_SECRET || '436cea9c55892e4b73fd7eb4c1418a6ae5e72c78bf466a0f0eaad8d285bdc0e3455adb6febeb65380c3c68d33de27969971459425aee9098bb86fae9d123158e',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: false,
+    }
 }));
 app.use(passport.authenticate('session'));
 
@@ -48,6 +56,9 @@ app.get('/', (req, res) => {
 });
 app.get('/profile', (req, res) => {
     res.render('profile', { user: req.user });
+});
+app.get('/dashboard', (req, res) => { 
+    res.render('dashboard', { user: req.user });
 });
 app.get('/rooms', (req, res) => {
     res.render('rooms', { user: req.user })

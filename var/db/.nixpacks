@@ -1,0 +1,6 @@
+# .nixpacks
+ignored_paths:
+  - "node_modules"
+  - "logs/"
+  - ".env"
+  - "test/"

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title><%= user.username %>'s Profile | Veltro</title>
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material-Symbols-Outlined" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    </head>
+    <body class="overflow-x-hidden font-Poppins bg-white text-slate-900 dark:bg-slate-900 dark:text-white">
+        <%- include('header.ejs') %>
+
+        <!-- Hero Section -->
+        <div class="relative h-64 bg-gradient-to-r from-indigo-600 to-purple-600">
+            <div class="absolute bottom-0 left-0 right-0 px-8 py-4 bg-black bg-opacity-40">
+                <div class="relative left-10 flex items-end space-x-6">
+                    <img src="/avatar/<%= user.id %>" alt="Profile Picture" 
+                         class="w-32 h-32 rounded-full border-4 border-white transform -translate-y-16 duration-500 transition hover:brightness-150">
+                    <div class="pb-4">
+                        <h1 class="text-4xl font-bold text-white"><%= user.name %></h1>
+                        <h1 class="text-2xl text-white">@<%= user.username %></h1>
+                        <p class="text-gray-300 mt-3">Joined <%= new Date(user.created_at).toLocaleDateString() %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- User Stats -->
+                    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4">Statistics</h2>
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Messages</span>
+                                <span class="font-medium"><%= user.messageCount || 0 %></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Rooms</span>
+                                <span class="font-medium"><%= user.roomCount || 0 %></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Friends</span>
+                                <span class="font-medium"><%= user.friendCount || 0 %></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+                        <div class="space-y-3">
+                            <button class="toggle-editing w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                                Edit Profile
+                            </button>
+                            <button class="w-full bg-slate-700 text-white py-2 px-4 rounded-lg hover:bg-slate-600 transition-colors">
+                                Manage Rooms
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- About -->
+                    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4">About</h2>
+                        <p class="text-gray-300"><%= user.bio || 'No bio yet.' %></p>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
+                        <div class="space-y-4">
+                            <% const activities = user.activities || [] %>
+                            <% if (activities.length === 0) { %>
+                                <p class="text-gray-400">No recent activity.</p>
+                            <% } else { %>
+                                <% activities.forEach(activity => { %>
+                                    <div class="flex items-center space-x-4 p-3 rounded-lg bg-slate-700">
+                                        <i class="material-icons text-indigo-400"><%= activity.icon %></i>
+                                        <div>
+                                            <p class="text-sm text-gray-300"><%= activity.description %></p>
+                                            <p class="text-xs text-gray-400"><%= activity.timestamp %></p>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Rooms -->
+                    <div class="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-semibold mb-4">My Rooms</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <% const userRooms = user.rooms || [] %>
+                            <% if (userRooms.length === 0) { %>
+                                <p class="text-gray-400">No rooms yet.</p>
+                            <% } else { %>
+                                <% userRooms.forEach(room => { %>
+                                    <div class="flex items-center space-x-3 p-3 rounded-lg bg-slate-700">
+                                        <img src="<%= room.icon %>" alt="Room Icon" class="w-10 h-10 rounded-full">
+                                        <div>
+                                            <h3 class="font-medium"><%= room.name %></h3>
+                                            <p class="text-sm text-gray-400"><%= room.memberCount %> members</p>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="friends" class="bg-slate-800 px-12 pt-10 pb-16 rounded-xl mt-8 overflow-x-hidden">
+                <h2 class="text-3xl font-bold mb-8">Friends</h2>
+
+                <nav>
+                    <a class="nav-link" href="javascript:nav(1)">Online</a>
+                    <a class="nav-link" href="javascript:nav(2)">Offline</a>
+                    <a class="nav-link" href="javascript:nav(3)">Requests <% if (friendRequests.length > 0) { %> (<%= friendRequests.length %>) <% } %></a>
+                </nav>
+                
+                <div class="tab">
+                    <% if (friendRequests.length === 0) { %>
+                        <p class="text-gray-400 mt-4">No friend requests.</p>
+                    <% } else { %>
+                            <% let previousRequestId = null; %>
+                            <% friendRequests.forEach((request, index) => { %>
+                                <% if (request.id !== previousRequestId) { %>
+                                    <div class="flex items-center space-x-4 p-3 rounded-lg bg-slate-700 mt-4">
+                                        <img src="/avatar/<%= request.id %>" alt="Profile Picture" class="inline mx-4 w-10 h-10 rounded-full">
+                                        <h2 class="flex-grow"><%= request.name %></h2>
+
+                                        <a href="/accept-request/<%= request.id %>" class="inline material-icons p-3 rounded-full bg-green-600 bg-opacity-35 ml-auto cursor-pointer select-none transition duration-300 hover:bg-opacity-100">check</a>
+                                        <a href="/deny-request/<%= request.id %>" class="inline material-icons p-3 rounded-full bg-red-600 bg-opacity-35 cursor-pointer select-none transition duration-300 hover:bg-opacity-100">close</a>
+                                    </div>
+                                    <% previousRequestId = request.id; %>
+                                <% } %>
+                            <% }) %>
+                    <% } %>
+                </div>
+            </div>
+ 
+        <div class="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 backdrop-blur-md 
+        w-fit max-w-fit rounded-xl h-fit max-h-fit justify-center items-center py-24 px-32 hidden" id="editProfile">
+            <h2 class="font-bold text-5xl text-center relative -top-12">Edit Profile</h2>
+
+            <form action="/update-profile" method="POST" enctype="multipart/form-data" class="space-y-8">
+                <!-- Avatar Section -->
+                <div class="flex justify-center items-center">
+                    <div class="relative">
+                        <img src="<%= user.avatar ? `/avatar/${user.id}` : '/images/default-pfp.png' %>" 
+                             alt="Avatar" 
+                             class="w-32 h-32 rounded-full object-cover" 
+                             id="avatar-preview"/>
+                        <label for="avatar" 
+                               class="absolute bottom-0 right-0 bg-indigo-600 rounded-full w-10 h-10 transform translate-y-1/2 flex items-center justify-center cursor-pointer
+                                      hover:bg-indigo-700 transition-colors">
+                            <i class="material-icons text-white">photo_camera</i>
+                        </label>
+                        <input type="file" 
+                               id="avatar" 
+                               name="avatar" 
+                               accept="image/*" 
+                               class="hidden"
+                               onchange="previewImage(this)"/>
+                    </div>
+                </div>
+
+                <!-- Name Section -->
+                <div class="space-y-2">
+                    <label for="name" class="block text-sm font-medium text-gray-300">Display Name</label>
+                    <input type="text" 
+                           id="name" 
+                           name="name" 
+                           value="<%= user.name %>"
+                           class="w-full bg-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"/>
+                </div>
+
+                <!-- Username Section -->
+                <div class="space-y-2">
+                    <label for="username" class="block text-sm font-medium text-gray-300">Username</label>
+                    <input type="text" 
+                           id="username" 
+                           name="username" 
+                           value="<%= user.username %>"
+                           class="w-full bg-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"/>
+                </div>
+
+                <!-- Bio Section -->
+                <div class="space-y-2">
+                    <label for="bio" class="block text-sm font-medium text-gray-300">Bio</label>
+                    <textarea id="bio" 
+                              name="bio" 
+                              rows="3"
+                              class="w-full bg-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"><%= user.bio || '' %></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button type="button" 
+                            onclick="closeEditProfile()" 
+                            class="px-6 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <script>
+            function previewImage(input) {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('avatar-preview').src = e.target.result;
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                }
+            }
+
+            function closeEditProfile() {
+                document.getElementById('editProfile').classList.add('hidden');
+                document.getElementById('editProfile').classList.remove('flex');
+            }
+
+            const username = document.getElementById("usernameEditor");
+            const name = document.getElementById("nameEditor");
+
+            const toggleEditUsername = (type) => {
+                switch (type) {
+                    case "edit":
+                        username.innerHTML = `
+                            <form action="/update-username" method="POST">
+                                <label class="block font-bold text-xl" for="new-username">Username</label>
+                                <input
+                                    class="block dark:bg-slate-600 dark:text-white focus:outline-none font-regular text-xl border-gray-300 rounded-lg my-4 p-2"
+                                    value="<%= user.username %>"
+                                    name="username"
+                                    type="text"
+                                    autocomplete="username"
+                                    required
+                                />
+                                <button onclick='window.location.href="/profile"' class="bg-black font-bold text-lg text-white my-2 p-3 rounded-md inline">Cancel</button>
+                                <button type="submit" class="bg-black font-bold text-lg text-white my-2 mx-2 p-3 rounded-md inline">Done</button>
+                            </form>
+                        `;
+                        break;
+                    case "done":
+                        username.innerHTML = `
+                            <h2 id="username" class="font-bold text-3xl leading-normal mr-4">
+                                <%= user.username %>
+                            </h2>
+                            <i onclick="toggleEditUsername('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
+                        `;
+                        break;
+                }
+            };
+
+            const toggleEditName = (type) => {
+                switch (type) {
+                    case "edit":
+                        name.innerHTML = `
+                            <form action="/update-name" method="POST">
+                                <label class="block font-bold text-xl" for="new-name">Name</label>
+                                <input
+                                    class="block dark:bg-slate-600 dark:text-white focus:outline-none font-regular text-xl border-gray-300 rounded-lg my-4 p-2"
+                                    value="<%= user.name %>"
+                                    name="name"
+                                    type="text"
+                                    autocomplete="name"
+                                    required
+                                />
+                                <button onclick='window.location.href="/profile"' class="bg-black font-bold text-lg text-white my-2 p-3 rounded-md inline">Cancel</button>
+                                <button type="submit" class="bg-black font-bold text-lg text-white my-2 mx-2 p-3 rounded-md inline">Done</button>
+                            </form>
+                        `;
+                        break;
+                    case "done":
+                        name.innerHTML = `
+                            <h2 id="name" class="font-bold text-3xl leading-normal mr-4">
+                                <%= user.name %>
+                            </h2>
+                            <i onclick="toggleEditName('edit')" class="material-icons mx-4 cursor-pointer">edit</i>
+                        `;
+                        break;
+                }
+            };
+
+            const editProfile = document.getElementById("editProfile");
+            document.querySelector('.toggle-editing').addEventListener('click', () => {
+                editProfile.classList.remove('hidden');
+            });
+        </script>
+        <script>
+            const tabs = document.getElementsByClassName('tab');
+            const navLinks = document.getElementsByClassName('nav-link');
+            let currentIndex = 0;
+
+            let nav = (index) => {
+            if (index - 1 === currentIndex) return;
+
+            const direction = index > currentIndex ? 'left' : 'right';
+            const oldTab = tabs[currentIndex];
+            const newTab = tabs[index - 1];
+
+            oldTab.classList.add(`slide-out-${direction}`);
+            newTab.classList.add(`slide-in-${direction}`);
+            newTab.classList.remove('hidden');
+
+            setTimeout(() => {
+                oldTab.classList.add('hidden');
+                oldTab.classList.remove(`slide-out-${direction}`);
+                newTab.classList.remove(`slide-in-${direction}`);
+                currentIndex = index - 1;
+            }, 500);
+
+            for (let i = 0; i < navLinks.length; i++) {
+                navLinks[i].classList.remove('active');
+            }
+            navLinks[index - 1].classList.add('active');
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+            nav(1); // Set the default tab to "Online" on load
+            });
+        </script>
+
+        <style>
+            .slide-in-left {
+            animation: slide-in-left 0.5s forwards;
+            }
+
+            .slide-out-left {
+            animation: slide-out-left 0.5s forwards;
+            }
+
+            .slide-in-right {
+            animation: slide-in-right 0.5s forwards;
+            }
+
+            .slide-out-right {
+            animation: slide-out-right 0.5s forwards;
+            }
+
+            @keyframes slide-in-left {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+            }
+
+            @keyframes slide-out-left {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+            }
+
+            @keyframes slide-in-right {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+            }
+
+            @keyframes slide-out-right {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(100%);
+            }
+            }
+
+            .nav-link.active {
+            font-weight: bold;
+            }
+        </style>
+    </body>
+</html>

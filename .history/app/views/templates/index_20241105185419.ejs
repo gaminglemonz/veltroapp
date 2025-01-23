@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+		<title>Veltro</title>
+
+		<!-- Load TailwindCSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		 <!-- Google Fonts -->
+		 <link rel="preconnect" href="https://fonts.googleapis.com">
+		 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		 <link href="https://fonts.googleapis.com/css2?&family=Poppins" rel="stylesheet">
+
+	</head>
+
+	<%- include('header.ejs') %>
+	<body class="m-0 font-Poppins">
+		<section style="background-image: url('images/parallax.jpg'); background-size: cover;" id="parallax" class="py-72 px-40 my-24 w-full max-h-full ">
+			<h2 class="text-white text-5xl font-bold leading-normal my-2">Real-time messaging<br>Anywhere, anytime</h2>
+			<button onclick="window.location.href = '/login'" class="bg-white text-black font-bold p-5 my-10 rounded-md">Get started</button>
+		</section>
+	</body>
+</html>

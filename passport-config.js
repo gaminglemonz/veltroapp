@@ -14,7 +14,6 @@ module.exports = function(passport) {
                     resolve(row);
                 });
             });
-
             if (!user) {
                 console.log('No user found with username:', username);
                 return done(null, false, { message: 'Incorrect username.' });
