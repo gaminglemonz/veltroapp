@@ -168,7 +168,7 @@ db.serialize(() => {
   });
 
   // Alter SQL Table Here
-  db.exec(`ALTER TABLE users CREATE`, (err) => {
+  db.exec(`DROP TABLE messages`, (err) => {
     if (err) {
          console.error('Error altering database:', err.message);
     } else {

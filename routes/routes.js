@@ -139,7 +139,7 @@ const getFriendRequests = async(userID) => {
         const rows = await db.allAsync('SELECT * FROM friend_requests WHERE friend_id = ?', [userID]);
         console.log('Friend Requests:', rows);
         const loadedRequests = rows.map(row => ({
-            friend_id: row.user_id,
+            friend_id: row.friend_id,
         }));
         const loadedUsers = loadedRequests.map(request => {
             return db.getAsync('SELECT * FROM users WHERE id = ?', [request.friend_id]);
