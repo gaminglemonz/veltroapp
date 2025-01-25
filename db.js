@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Define database path
-const dbPath = path.resolve(__dirname, '../var/db/veltro.db');
+const dbPath = path.resolve(__dirname, './var/db/veltro.db');
 
 // Check if the database directory exists; create it if not
 const dbDir = path.dirname(dbPath);
@@ -168,13 +168,13 @@ db.serialize(() => {
   });
 
   // Alter SQL Table Here
-  db.exec(`DROP TABLE messages`, (err) => {
-    if (err) {
-         console.error('Error altering database:', err.message);
-    } else {
-        console.log('Database successfully altered');
-    }
-}); 
+  // db.exec(`DROP TABLE messages`, (err) => {
+  //   if (err) {
+  //        console.error('Error altering database:', err.message);
+  //   } else {
+  //       console.log('Database successfully altered');
+  //   }
+  // }); 
 });
 
 module.exports = db;

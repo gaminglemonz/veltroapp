@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6", // or your preferred version
+    "module": "CommonJS", // or your module system
+    "rootDir": "./src", // Input directory
+    "outDir": "./dist", // Base output directory
+    "strict": true,
+    "esModuleInterop": true,
+    "baseUrl": "./src",
+    "paths": {
+      "*": ["*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
