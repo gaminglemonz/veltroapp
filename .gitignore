@@ -1,5 +1,4 @@
-# Dependenices
 node_modules/
-
-# Build outputs
 dist/
+desktop.ini
+certificates/
