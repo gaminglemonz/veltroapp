@@ -1,11 +1,16 @@
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
-const path = require('path');
 
-// Define database path
-const dbPath = path.resolve(__dirname, './var/db/veltro.db');
+import sqlite3 from 'sqlite3';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-// Check if the database directory exists; create it if not
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+sqlite3.verbose();
+
+const dbPath = path.resolve(__dirname, 'var/db/veltro.db');
+
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
@@ -142,7 +147,7 @@ db.serialize(() => {
   );
 
   // Insert example room
-  const imageBuffer = fs.readFileSync('public/images/veltro.png')
+  const imageBuffer = fs.readFileSync('client/src/public/images/veltro.png')
   db.run(
     `INSERT INTO rooms (name, owner, description, icon, banner) VALUES (?, ?, ?, ?, ?)`,
     ['Example Room #1', 'NF', 'Example', imageBuffer],
@@ -177,4 +182,4 @@ db.serialize(() => {
   // }); 
 });
 
-module.exports = db;
+export default db;

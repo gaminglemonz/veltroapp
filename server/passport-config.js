@@ -1,8 +1,32 @@
-const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcrypt');
-const db = require('./db'); // Import your database connection
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcrypt';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
 
-module.exports = function(passport) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const dbUrl = new URL('./db.js', import.meta.url).href;
+const { default: db } = await import(dbUrl);
+
+function checkDatabaseDirectory(target) {
+    const directoryPath = path.dirname(target);
+
+    if (fs.existsSync(directoryPath)) {
+        console.log('Database directory exists for passport-config.js', directoryPath);
+        if (fs.existsSync(target)) {
+            console.log('Database file exists for passport-config.js:', target);
+        } else {
+            console.log(target, "is not an existing file");
+        }
+    } else {
+        console.log(directoryPath, "is not an existing directory");
+    }
+}
+checkDatabaseDirectory(path.join(__dirname, 'db.js'));
+
+function passportConfig(passport) {
     passport.use(new LocalStrategy(async (username, password, done) => {
         try {
             const user = await new Promise((resolve, reject) => {
@@ -61,3 +85,5 @@ module.exports = function(passport) {
         }
     });
 };
+
+export default passportConfig;

@@ -1,16 +1,21 @@
 {
+  "type": "module",
   "compilerOptions": {
-    "target": "ES6", // or your preferred version
-    "module": "CommonJS", // or your module system
-    "rootDir": "./src", // Input directory
-    "outDir": "./dist", // Base output directory
+    "target": "ES6",
+    "module": "NodeNext",
+    "rootDir": "./server/src",
+    "outDir": "./server/dist",
     "strict": true,
     "esModuleInterop": true,
-    "baseUrl": "./src",
+    "skipLibCheck": true,
+    "moduleResolution": "nodenext",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./server/src",
     "paths": {
       "*": ["*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["bcrypt.d.ts", "server/src/server.ts", "server/src/app.ts", "server/src/routes.ts"],
   "exclude": ["node_modules"]
 }

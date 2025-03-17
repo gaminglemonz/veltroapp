@@ -1,23 +1,22 @@
-import express, { Request, Response } from "express";
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oidc');
-const bcrypt = require('bcrypt');
-const multer = require('multer');
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
-const path = require('path');
-const db = new sqlite3.Database('../var/db/veltro.db');
+import express, { Request, Response, ErrorRequestHandler } from "express";
+import passport from 'passport';
+import bcrypt from 'bcrypt';
+import multer from 'multer';
+import sqlite3 from 'sqlite3';
+import fs from 'fs';
+import path from 'path';
+import { promisify } from "util";
+import { arrayBuffer } from "stream/consumers";
+import db from '../db.js';
+import { error } from "console";
+
 const router = express.Router();
-const { promisify } = require('util');
-const { arrayBuffer } = require("stream/consumers");
-const { Request, Response } = require('express');
 
 async function loadFileType() {
     const FileType = await import('file-type');
     return FileType;
 }
 
-// Promisify SQLite methods
 db.getAsync = promisify(db.get.bind(db));
 db.allAsync = promisify(db.all.bind(db));
 db.runAsync = promisify(db.run.bind(db));
@@ -35,11 +34,8 @@ const upload = multer({
     }
 });
 
-const admins: string[] = ['ThatLemonGamer', 'Lemon Games'];
-const moderators: string[] = [
-    'ThatLemonGamer', 'Lemon Games', 'thelegendski', 
-    'Sprout', 'Dominic R.', 'S.M.V', 'Astro'
-];
+const admins: string[] = [];
+const moderators: string[] = [];
 
 const getUserRole = (username: string) => {
     if (admins.includes(username)) return 'Admin';
@@ -52,7 +48,9 @@ const extractRooms = async () => {
     try {
         const rows = await db.allAsync('SELECT * FROM rooms');
         if (rows) {
-            rooms = rows.map((room: { id: number, name: string, owner: string, description: string, icon: any, banner: any, visibility: string, type: string, messageCount: number, memberCount: number }) => ({
+            rooms = rows.map(
+                (room: { id: number, name: string, owner: string, description: string, icon: any, banner: any, 
+                visibility: string, type: string, messageCount: number, memberCount: number }) => ({
                 id: room.id,
                 name: room.name,
                 owner: room.owner,
@@ -117,59 +115,44 @@ const getRoomMessages = async (roomID: number) => {
         return [];
     }
 };
-const getFriends = async(userID: number) => {
-    try {
-        console.log('Getting friends for userID:', userID);
-        const rows = await db.allAsync('SELECT * FROM friends WHERE user_id = ?', [userID]);
-        console.log('Friends:', rows);
-        const loadedFriends = rows.map((row: { user_id: number, friend_id: number }) => ({
-            user_id: row.user_id,
-            friend_id: row.friend_id,
-        }))
-        const loadedUsers = loadedFriends.map((friend: { friend_id: number }): number => {
-            return db.getAsync('SELECT * FROM users WHERE id = ?', [friend.friend_id]);
-        });
-        return Promise.all(loadedUsers);
-    } catch (err) {
-        console.error('Error while getting friends:', err);
-        return [];
-    }
-}
 const getFriendRequests = async(userID: number) => {
     try {
-        console.log('Getting friend requests for userID:', userID);
-        const rows = await db.allAsync('SELECT * FROM friend_requests WHERE friend_id = ?', [userID]);
-        console.log('Friend Requests:', rows);
-        const loadedRequests = rows.map((row: { friend_id: number }) => ({
-            friend_id: row.friend_id,
-        }));
-        const loadedUsers = loadedRequests.map((request: { friend_id: number })  => {
-            return db.getAsync('SELECT * FROM users WHERE id = ?', [request.friend_id]);
-        });
-        return Promise.all(loadedUsers);
+        const rows = await db.allAsync('SELECT * FROM friend_requests WHERE receiver_id = ?', [userID]);
+        const requestPromises = rows.map((row: { sender_id: number }) =>
+            db.getAsync('SELECT id, username, name, avatar FROM users WHERE id = ?', [row.sender_id])
+        );
+        const requests = await Promise.all(requestPromises);
+        return requests.filter((request: any) => request !== null);
     } catch (err) {
         console.error('Error while getting friend requests:', err);
         return [];
     }
 }
 
-// Define User interface
-interface User {
-    id: number;
-    username: string;
-    email: string;
-    name: string;
-    avatar?: any;
-    bio?: string;
-}
-
-declare global {
-    namespace Express {
-        interface Request {
-            user?: User;
-        }
+const getFriends = async(userID: number) => {
+    try {
+        const rows = await db.allAsync(
+            'SELECT * FROM friends WHERE user_id = ? OR friend_id = ?', 
+            [userID, userID]
+        );
+        const friendPromises = rows.map((row: { user_id: number, friend_id: number }) => {
+            const friendID = row.user_id === userID ? row.friend_id : row.user_id;
+            return db.getAsync('SELECT id, username, name, avatar FROM users WHERE id = ?', [friendID]);
+        });
+        const friends = await Promise.all(friendPromises);
+        return friends.filter((friend: any) => friend !== null);
+    } catch (err) {
+        console.error('Error while getting friends:', err);
+        return [];
     }
 }
+
+const checkAuth = (req: Request | any, res: Response, next: ErrorRequestHandler | any) => {
+    if (req.isAuthenticated()) next();
+
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+};
+
 
 router.get('/profile/@:username', async (req: any, res: Response) => {
     const username = req.params.username;
@@ -191,19 +174,16 @@ router.get('/profile/@:username', async (req: any, res: Response) => {
         res.render('profile', { user: req.user, profile: user, friends, error: err.message });
     }
 });
-router.get('/profile/:username', (req, res) => {
+router.get('/profile/:username', (req: Request, res: Response) => {
     res.redirect(`/profile/@${req.params.username}`);
 })
-router.get('/header', (req, res) => {
+router.get('/header', (req: Request, res: Response) => {
     res.render('header', { user: req.user });
 });
 router.get('/dashboard', async (req: any, res: Response) => {
     const friendRequests = await getFriendRequests(req.user.id);
     const friends = await getFriends(req.user.id);
     res.render('dashboard', { user: req.user, friendRequests, friends });
-});
-router.get('/edit-profile', async (req, res) => {
-    res.render('edit-profile', { user: req.user });
 });
 router.get('/rooms', (req: any, res: Response) => {
     res.render('rooms', { user: req.user, rooms: rooms });
@@ -212,7 +192,7 @@ router.get('/rooms', (req: any, res: Response) => {
 router.get('/create-room', (req: Request, res: Response) => {
     res.render('create-room', { user: req.user })
 });
-router.get('/room/:id/icon', async (req: any, res: any) => {
+router.get('/room/:id/icon', async (req: Request, res: Response) => {
     try {
 
         const { id } = req.params;
@@ -234,7 +214,7 @@ router.get('/room/:id/icon', async (req: any, res: any) => {
         res.status(500).send('Internal Server Error');
     }
 });
-router.get('/rooms/:roomId', async (req: any, res: any) => {
+router.get('/rooms/:roomId', async (req: Request | any, res: Response) => {
     const { roomId } = req.params;
     const avatar = '/avatar/' + req.user.id;
 
@@ -253,7 +233,7 @@ router.get('/rooms/:roomId', async (req: any, res: any) => {
     }
 });
 
-router.post('/create-room', upload.fields([{ name: 'icon' }, { name: 'banner' }]), async (req: any, res: Response, next) => {
+router.post('/create-room', upload.fields([{ name: 'icon' }, { name: 'banner' }]), async (req: Request | any, res: Response, next) => {
     try {
         const { name, visibility, type, password } = req.body;
         const owner = req.user.username;
@@ -373,42 +353,54 @@ router.post('/signup', async (req: any, res: Response, next) => {
     }
 });
 
-
-router.get('/login', (req, res) => {
-    if (req.user) return res.redirect('/dashboard');
-    res.render('login');
-});
-
-router.post('/login/password', (req: any, res: Response, next) => {
+router.post('/api/login/password', (req: any, res: Response, next) => {
     passport.authenticate('local', (err: any, user: any, info: any) => {
-        if (err) return next(err);
-        if (!user) return res.redirect('/login');
-        req.login(user, (err: any) => {
-            if (err) return next(err);
-            res.redirect('/rooms');
+        if (err) {
+            console.error('Login error:', err);
+            return res.status(500).json({ success: false, error: 'Internal server error' });
+        }
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+        req.login(user, async (err: any) => {
+            if (err) {
+                console.error("Session error", err);
+                return res.status(500).json({ success: false, error: 'Session error' });
+            }
+
+            const userData = await db.getAsync('SELECT * FROM users WHERE id = ?', [user.id]);
+
+            res.json({ success: true, user: userData });
         });
     })(req, res, next);
 });
 
-router.post('/update-profile', upload.single('avatar'), async (req: any, res: Response) => {
+router.post('api/update-profile', upload.single('avatar'), async (req: any, res: Response) => {
     try {
-        const { name, username, bio } = req.body;
+        if (!req.isAuthenticated()) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        const updates: any = {};
         const row = await db.getAsync('SELECT avatar FROM users WHERE id = ?', [req.user.id]);
         let avatar = row ? row.avatar : null;
+        if (req.body.name) updates.name = req.body.name;
+        if (req.body.username) updates.username = req.body.username;
+        if (req.body.bio) updates.bio = req.body.bio;
         if (req.file) {
-            avatar = req.file.buffer;
+            updates.avatar = req.file.buffer;
         }
-        await db.runAsync('UPDATE users SET name = ?, username = ?, bio = ?, avatar = ? WHERE id = ?', [name, username, bio, avatar, req.user.id]);
+        await db.runAsync('UPDATE users SET ? WHERE id = ?', [updates, req.user.id]);
     
         avatar = req.file ? req.file.buffer : (row && row.avatar) ? row.avatar : null;
-        res.redirect('/dashboard');
+        res.json({ success: true })
     } catch (err) {
         console.error('Error updating profile:', err);
         res.status(500).send('Error updating profile');
     }
 });
 
-router.post('/delete-user', async (req: any, res: Response) => {
+router.post('/delete-user', async (req: Request | any, res: Response) => {
     try {
         const userID = req.user.id;
         await db.runAsync('DELETE FROM users WHERE id = ?', [userID]);
@@ -453,19 +445,28 @@ router.post('/upload-avatar', upload.single('avatar'), (req: any, res: Response)
     res.redirect('/dashboard');
 });
 
-router.get('/avatar/:id', (req, res) => {
-    db.get('SELECT avatar FROM users WHERE id = ?', [req.params.id], (err: string, row: { avatar?: string }) => {
-        if (err) {
-            console.error('Error retrieving avatar:', err);
-            return res.status(500).send('Error retrieving avatar.');
+router.get('/avatar/:id', async (req: Request, res: Response) => {
+    try {
+        const userData = await db.getAsync('SELECT avatar FROM users WHERE id = ?', [req.params.id]);
+        
+        if (!userData || !userData.avatar) {
+            // Serve a default avatar if none exists
+            return res.sendFile(path.join(__dirname, '../public/default-avatar.png'));
         }
-        if (row && row.avatar) {
-            res.contentType('image/png');
-            res.send(row.avatar);
+
+        const FileType = (await import('file-type')).fileTypeFromBuffer;
+        const type = await FileType(userData.avatar);
+        
+        if (type && type.mime.startsWith('image/')) {
+            res.contentType(type.mime);
+            res.send(userData.avatar);
         } else {
-            res.status(404).send('Avatar not found.');
+            res.status(400).send('Invalid image format');
         }
-    });
+    } catch (err) {
+        console.error('Error retrieving avatar:', err);
+        res.status(500).send('Error retrieving avatar');
+    }
 });
 
 router.post('/delete-avatar', (req: any, res: Response) => {
@@ -479,8 +480,6 @@ router.post('/delete-avatar', (req: any, res: Response) => {
         res.send('Avatar deleted successfully.');
     });
 });
-
-
 router.post('/logout', (req: any, res: Response, next) => {
     req.logout((err: any) => {
         if (err) return next(err);
@@ -488,4 +487,73 @@ router.post('/logout', (req: any, res: Response, next) => {
     });
 });
 
-module.exports = router;
+router.get('/api/room/:id', async (req: Request | any, res: Response) => {
+    try {
+        const room = await db.getAsync("SELECT * FROM users WHERE id = ?", [req.params.id]);
+
+        if (!room) return res.status(404).json({ success: false, error: 'Room not found' });
+
+        res.json(room);
+    } catch (err: ErrorRequestHandler | any) {
+        console.error('Error getting room data:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+router.get('/api/rooms/messages/:id', async (req: Request | any, res: Response) => {
+    try {
+        const messages = await db.getAsync('SELECT * FROM messages WHERE room_id = ?', [req.params.id]);
+        res.json(messages);
+    } catch (err: ErrorRequestHandler | any) {
+        console.error('Error while getting room messages:', err)
+    }
+});
+router.get('/api/user', checkAuth, async (req: Request | any, res: Response) => {
+    try {
+        if (!req.isAuthenticated()) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const userData = await db.getAsync(
+            'SELECT id, username, email, name, avatar, bio, created_at FROM users WHERE id = ?',
+            [req.user.id]
+        );
+
+        if (!userData) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const friends = await getFriends(req.user.id);
+        const friendRequests = await getFriendRequests(req.user.id);
+
+        res.json({ success: true, user: userData, friends: friends || [], friendRequests: friendRequests || [], });
+    } catch (err) {
+        console.error('Error fetching user data:', err);
+        res.status(500).json({ error: 'Internal server error', success: false, });
+    }
+});
+// router.get('/auth/user', async (req: Request | any, res: Response) => {
+//     try {
+//         if (!req.isAuthenticated()) {
+//             return res.status(401).json({ error: 'Unauthorized' });
+//         }
+
+//         const userData = await db.getAsync(
+//             'SELECT id, username, email, name, avatar, bio, created_at FROM users WHERE id = ?',
+//             [req.user.id]
+//         );
+
+//         if (!userData) {
+//             return res.status(404).json({ error: 'User not found' });
+//         }
+
+//         const friends = await getFriends(req.user.id);
+//         const friendRequests = await getFriendRequests(req.user.id);
+
+//         res.json({ success: true, user: userData, friends: friends || [], friendRequests: friendRequests || [], });
+//     } catch (err) {
+//         console.error('Error fetching user data:', err);
+//         res.status(500).json({ error: 'Internal server error', success: false, });
+//     }
+// });
+
+export default router;
