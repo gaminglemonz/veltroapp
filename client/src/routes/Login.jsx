@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
+import axios from 'axios';
 import "../index.css";
 
 const Login = () => {
@@ -13,9 +14,12 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("api/login/password", {
+            const response = await axios.get("api/login/password", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({ username, password }),
                 credentials: "include",
             });
