@@ -3,3 +3,4 @@ dist/
 desktop.ini
 certificates/
 .env
+.github/
