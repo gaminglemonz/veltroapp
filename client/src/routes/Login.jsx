@@ -1,34 +1,33 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
+import axios from 'axios';
 import "../index.css";
 
 const Login = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [error, setError] = useState(""); 
     const navigate = useNavigate();
-    const { setUser } = useContext(AuthContext);
+    const { setData } = useContext(AuthContext);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("api/login/password", {
+            const response = await axios.post("/login/password", {
+                username, password,
+            }, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
-                credentials: "include",
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Acccept": "application/json",
+                },
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
-                setUser(data.user);
-                // setFriends(data.friends);
-                // setFriendRequests(data.friendRequests);
-                navigate("/dashboard");
-            } else {
-                setError(data.message || "Login failed");
-            }
+            console.log("Login Response:", response)
+            setData(response.data);
+            navigate("/dashboard");
         } catch (err) {
             console.error("Error logging in:", err.message);
             setError("Login failed: " + err.message);

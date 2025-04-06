@@ -20,13 +20,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.set('view engine', 'pug');
-app.use('/api', router);
-app.use(express.static(path.join(__dirname, '../../client/dist')));
-app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
-});
-
 app.use(cors({
     origin: [ 'http://localhost:5173', 'http://localhost:5000' ],
     credentials: true,
@@ -36,6 +29,8 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+app.use(express.static(path.join(__dirname, '../../client/dist')));
 
 app.use(session({
     store: new (SQLiteStore as any)({
@@ -51,19 +46,19 @@ app.use(session({
         httpOnly: false,
     }
 }));
-app.use(passport.authenticate('session'));
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.set('view engine', 'pug');
+app.use('/', router);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
     res.locals.user = req.user || null;
     next();
 });
 
-app.use('/', router);
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-    next(createError(404));
+app.get('*', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });
 
 const storage = multer.diskStorage({

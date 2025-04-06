@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useContext } from 'react-router-dom';
+import { AuthContext } from '../context/auth';
 
 const EditProfile = ({ user, onClose }) => {
+    const { data, loading } = useContext(AuthContext);
+    const user = data?.user || null; 
+
     const [avatar, setAvatar] = useState(null);
     const [preview, setPreview] = useState(null);
     const [username, setUsername] = useState(user.username);
@@ -28,7 +32,7 @@ const EditProfile = ({ user, onClose }) => {
         formData.append('name', name);
 
         try {
-            const response = await fetch('http://localhost:5000/api/update-profile', {
+            const response = await fetch('/update-profile', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include'
@@ -44,7 +48,7 @@ const EditProfile = ({ user, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white">
             <div className="bg-slate-800 p-8 rounded-xl max-w-md w-full">
                 <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
                 

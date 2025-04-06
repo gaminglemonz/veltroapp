@@ -4,65 +4,44 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
-    const [ user, setUser ] = useState(null);
-    // const [ friendRequests, setFriendRequests ] = useState([]);
-    // const [ friends, setFriends ] = useState([]); 
+    const [ data, setData ] = useState(null);
     const [ loading, setLoading ] = useState(true);
+    const [ error, setError ] = useState(null);
 
     useEffect(() => {
-        console.log("Checking authentication state...");
-
         async function fetch () {
-            await axios.get('/api/user', {
-                credentials: 'include',
-                method: "GET",
-                mode: "cors",
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(async res => {
-                console.log("Auth response status:", res.status);
-                
-                const data = res.json();
-                try {
-                    console.log("Response data:", data);
-                    return data;
-                } catch (e) {
-                    console.error("Response was not JSON:", e.message, data);
-                    throw new Error('Server returned invalid JSON');
-                }
-            })
-            .then(data => {
-                console.log("Received data: ", data);
-                if (data.success) {
-                    setUser(data.user);
-                    // setFriends(Array.isArray(data.friends) ? data.friends : []);
-                    // setFriendRequests(Array.isArray(data.friendRequests) ? data.friendRequests : []);
+            try {
+                const response = await axios.get('/user',{
+                    withCredentials: true,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                });
+                console.log("Auth Response:", response);
+                         
+                if (response.data.success) {
+                    setData(response.data.data);
                 } else {
-                    console.error(data.error || "Invalid response format");
+                    setData(null);
+                    console.error("Unsuccessful response:", response.data.message);
                 }
-            })
-            .catch(err => {
-                console.error('Auth error:', err);
-                setUser(null);
-                // setFriends([]);
-                // setFriendRequests([]);
-            })
-            .finally(() => {
+            } catch (err) {
+                console.error("Error fetching user data:", err.message);
+                setData(null);
+                setError(err);
+            } finally {
                 setLoading(false);
-            });
+            }
         }
 
         fetch();
     }, []);
 
     const value = {
-        user, setUser,
-        // friends, setFriends,
-        // friendRequests, setFriendRequests,
-        loading
+        data, setData,
+        error, setError,
+        loading, setLoading
     };
     return (
         <AuthContext.Provider value={value}>

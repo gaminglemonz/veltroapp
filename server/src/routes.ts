@@ -147,13 +147,6 @@ const getFriends = async(userID: number) => {
     }
 }
 
-const checkAuth = (req: Request | any, res: Response, next: ErrorRequestHandler | any) => {
-    if (req.isAuthenticated()) next();
-
-    return res.status(401).json({ success: false, error: 'Unauthorized' });
-};
-
-
 router.get('/profile/@:username', async (req: any, res: Response) => {
     const username = req.params.username;
     const { id } = req.user; 
@@ -174,24 +167,7 @@ router.get('/profile/@:username', async (req: any, res: Response) => {
         res.render('profile', { user: req.user, profile: user, friends, error: err.message });
     }
 });
-router.get('/profile/:username', (req: Request, res: Response) => {
-    res.redirect(`/profile/@${req.params.username}`);
-})
-router.get('/header', (req: Request, res: Response) => {
-    res.render('header', { user: req.user });
-});
-router.get('/dashboard', async (req: any, res: Response) => {
-    const friendRequests = await getFriendRequests(req.user.id);
-    const friends = await getFriends(req.user.id);
-    res.render('dashboard', { user: req.user, friendRequests, friends });
-});
-router.get('/rooms', (req: any, res: Response) => {
-    res.render('rooms', { user: req.user, rooms: rooms });
-});
 
-router.get('/create-room', (req: Request, res: Response) => {
-    res.render('create-room', { user: req.user })
-});
 router.get('/room/:id/icon', async (req: Request, res: Response) => {
     try {
 
@@ -316,10 +292,6 @@ router.get('/deny-request/:id', async (req: any, res: Response) => {
     }
 });
 
-router.get('/signup', (req, res) => {
-    if (req.user) return res.redirect('/dashboard');
-    res.render('signup');
-});
 router.post('/signup', async (req: any, res: Response, next) => {
     try {
         const { username, password, email, name } = req.body;
@@ -353,13 +325,14 @@ router.post('/signup', async (req: any, res: Response, next) => {
     }
 });
 
-router.post('/api/login/password', (req: any, res: Response, next) => {
+router.post('/login/password', (req: any, res: Response, next) => {
     passport.authenticate('local', (err: any, user: any, info: any) => {
         if (err) {
             console.error('Login error:', err);
             return res.status(500).json({ success: false, error: 'Internal server error' });
         }
         if (!user) {
+            console.error("Invalid credentials");
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
         req.login(user, async (err: any) => {
@@ -367,15 +340,15 @@ router.post('/api/login/password', (req: any, res: Response, next) => {
                 console.error("Session error", err);
                 return res.status(500).json({ success: false, error: 'Session error' });
             }
-
+            console.log("Logging in user ", user.id)
             const userData = await db.getAsync('SELECT * FROM users WHERE id = ?', [user.id]);
 
-            res.json({ success: true, user: userData });
+            res.json({ success: true, data: userData });
         });
     })(req, res, next);
 });
 
-router.post('api/update-profile', upload.single('avatar'), async (req: any, res: Response) => {
+router.post('/update-profile', upload.single('avatar'), async (req: any, res: Response) => {
     try {
         if (!req.isAuthenticated()) {
             return res.status(401).send('Unauthorized');
@@ -487,7 +460,7 @@ router.post('/logout', (req: any, res: Response, next) => {
     });
 });
 
-router.get('/api/room/:id', async (req: Request | any, res: Response) => {
+router.get('/room/:id', async (req: Request | any, res: Response) => {
     try {
         const room = await db.getAsync("SELECT * FROM users WHERE id = ?", [req.params.id]);
 
@@ -499,7 +472,7 @@ router.get('/api/room/:id', async (req: Request | any, res: Response) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
-router.get('/api/rooms/messages/:id', async (req: Request | any, res: Response) => {
+router.get('/rooms/messages/:id', async (req: Request | any, res: Response) => {
     try {
         const messages = await db.getAsync('SELECT * FROM messages WHERE room_id = ?', [req.params.id]);
         res.json(messages);
@@ -507,53 +480,40 @@ router.get('/api/rooms/messages/:id', async (req: Request | any, res: Response) 
         console.error('Error while getting room messages:', err)
     }
 });
-router.get('/api/user', checkAuth, async (req: Request | any, res: Response) => {
+router.get('/user', async (req: Request | any, res: Response) => {
+    console.log("Received request at /user");
     try {
         if (!req.isAuthenticated()) {
+            console.error("Unauthorized");
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
         const userData = await db.getAsync(
-            'SELECT id, username, email, name, avatar, bio, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, name, avatar, bio, created_at, messageCount FROM users WHERE id = ?',
             [req.user.id]
         );
 
         if (!userData) {
+            console.log("User not found");
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
         const friends = await getFriends(req.user.id);
         const friendRequests = await getFriendRequests(req.user.id);
 
-        res.json({ success: true, user: userData, friends: friends || [], friendRequests: friendRequests || [], });
+        const data = {
+            user: userData,
+            friends: friends || [],
+            friendRequests: friendRequests || [],
+            friendCount: friends.length || 0,
+        };
+
+        console.log("User data received, ", userData);
+        res.json({ success: true, data });
     } catch (err) {
         console.error('Error fetching user data:', err);
         res.status(500).json({ error: 'Internal server error', success: false, });
     }
 });
-// router.get('/auth/user', async (req: Request | any, res: Response) => {
-//     try {
-//         if (!req.isAuthenticated()) {
-//             return res.status(401).json({ error: 'Unauthorized' });
-//         }
-
-//         const userData = await db.getAsync(
-//             'SELECT id, username, email, name, avatar, bio, created_at FROM users WHERE id = ?',
-//             [req.user.id]
-//         );
-
-//         if (!userData) {
-//             return res.status(404).json({ error: 'User not found' });
-//         }
-
-//         const friends = await getFriends(req.user.id);
-//         const friendRequests = await getFriendRequests(req.user.id);
-
-//         res.json({ success: true, user: userData, friends: friends || [], friendRequests: friendRequests || [], });
-//     } catch (err) {
-//         console.error('Error fetching user data:', err);
-//         res.status(500).json({ error: 'Internal server error', success: false, });
-//     }
-// });
 
 export default router;
