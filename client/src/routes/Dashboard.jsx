@@ -1,53 +1,62 @@
 import React, { useEffect, useContext, useState } from 'react';
 import Header from '../components/Header';
 import Editor from '../components/Editor';
+import Loading from '../components/Loading';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth';
 
 const Dashboard = () => {
     const { data, loading } = useContext(AuthContext);
+    const { user, friends, friendRequests, rooms } = data || {};
     const navigate = useNavigate();
     const [ showEditor, setShowEditor ] = useState(false);
 
-    const user = data?.user || null;
-    const friends = data?.friends || [];
-    const friendRequests = data?.friendRequests || [];
     const activityTypeToIcon = {
         "message": "chat_bubble",
         "joined_room": "group_add",
         "left_room" : "group_remove",
     };
 
+    const activities = [
+        {
+            type: "joined_room",
+            description: "Joined Room #1",
+            timestamp: "2023-10-01 12:00",
+        },
+    ];
+
     console.log("Received data:", data);
 
     useEffect(() => {
+        document.title = "Veltro - Dashboard";
         if (!loading && !data) {
             navigate('/login');
         }
     }, [data, loading, navigate]);
 
-    if (loading) {
+    if (loading || !data || !user) {
         return (
-            <div className="bg-slate-900 h-screen flex items-center justify-center">
-                <div className="text-white text-2xl font-bold">Loading...</div>
-                <div className="bg-white h-1 w-1 rounded-full animate-ping absolute"></div>
-            </div>
+            <Loading />
         );
     }
 
-    if (!user) {
-        console.log("User object not found. Defined as", user);
-        return (
-            <div className="bg-slate-900 h-screen flex items-center justify-center">
-                <div>User not found. Redirecting...</div>
-            </div>
-        );
-        navigate("/dashboard");
+    const leaveRoom = async (id, e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.post(`/leave-room/${id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            })
+        } catch (err) {
+            console.error("Error leaving room:", err.message);
+        }
     }
 
     return (
-        <>
-            <div className="relative h-64 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        <div className="bg-slate-900 overflow-x-hidden min-h-screen text-white">
+            <div className="relative h-64 bg-gradient-to-r from-indigo-600 to-purple-600">
                 <div className="absolute bottom-0 left-0 right-0 px-8 py-4 bg-black bg-opacity-40">
                     <div className="relative left-10 flex items-end space-x-6">
                         <img
@@ -57,7 +66,7 @@ const Dashboard = () => {
                         />
                         <div className="pb-4">
                             <h1 className="text-4xl font-bold text-white">{user.name || 'Unknown User'}</h1>
-                            <h1 className="text-2xl text-white">@{user.username}</h1>
+                            <h1 className="text-2xl">@{user.username}</h1>
                             <p className="text-gray-300 mt-3">
                                 Joined {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                             </p>
@@ -112,10 +121,10 @@ const Dashboard = () => {
                                 ) : (
                                     activities.map((activity, index) => (
                                         <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-slate-700">
-                                            <i className="material-icons text-indigo-400">{activity.icon}</i>
+                                            <i className="material-icons text-indigo-400">{activity.icon || 'question_mark'} </i>
                                             <div>
-                                                <p className="text-sm text-gray-300">{activity.description}</p>
-                                                <p className="text-xs text-gray-400">{activity.timestamp}</p>
+                                                <p className="text-sm text-gray-300">{activity.description || 'No details'}</p>
+                                                <p className="text-xs text-gray-400">{activity.timestamp || 'No given time'}</p>
                                             </div>
                                         </div>
                                     ))
@@ -123,7 +132,7 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-6 shadow-lg">
+                        {/* <div className="bg-slate-800 rounded-xl p-6 shadow-lg">
                             <h2 className="text-xl font-semibold mb-4">My Rooms</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {user.rooms && user.rooms.length === 0 ? (
@@ -140,14 +149,14 @@ const Dashboard = () => {
                                     ))
                                 )}
                             </div>
-                        </div>
+                        </div> */}
                         <div id="friends" className="bg-slate-800 px-12 pt-10 pb-16 rounded-xl mt-8 overflow-x-hidden">
                             <h2 className="text-3xl font-bold mb-8">Friends</h2>
 
                             <nav>
-                                <a className="nav-link" href="javascript:nav(1)">Online</a>
-                                <a className="nav-link" href="javascript:nav(2)">Offline</a>
-                                <a className="nav-link" href="javascript:nav(3)">Requests {friendRequests.length > 0 && `(${friendRequests.length})`}</a>
+                                <a className="nav-link mr-2" href="javascript:nav(1)">Online</a>
+                                <a className="nav-link mx-2" href="javascript:nav(2)">Offline</a>
+                                <a className="nav-link mx-2" href="javascript:nav(3)">Requests {friendRequests.length > 0 && `(${friendRequests.length})`}</a>
                             </nav>
 
                             <div className="tab">
@@ -166,13 +175,39 @@ const Dashboard = () => {
                                 )}
                             </div>
                         </div>
+                        <div id="rooms" className="bg-slate-800 px-12 pt-10 pb-16 rounded-xl mt-8 overflow-x-hidden">
+                            <h2 className="text-3xl font-bold mb-8">Rooms</h2>
+
+                            {rooms.length === 0 ? (
+                                    <p className="text-gray-400 mt-4">You're not in any rooms. 
+                                        <a href="rooms" className="font-bold hover:underline">Click here to explore</a>
+                                    </p>
+                                ) : (
+                                    rooms.map((room) => {
+                                        return (
+                                            <div key={room.id} className="flex items-center space-x-4 p-3 rounded-lg bg-slate-700 mt-4">
+                                                <img src={`${room.icon}`} alt="Room Icon" className="inline mx-4 w-10 h-10 rounded-full" />
+                                                <div className="inline flex-grow">
+                                                    <h2>{room.name}</h2>
+                                                    <h3 className="text-sm text-gray-400">By {room.owner}</h3>
+                                                </div>
+
+                                                <a href={`/rooms/${room.id}`} className="inline material-icons p-3 rounded-full bg-blue-600 bg-opacity-35 
+                                                    ml-auto cursor-pointer select-none transition duration-300 hover:bg-opacity-100">arrow_forward</a>
+                                                <button onClick={leaveRoom(room.id, this)} className="inline material-icons p-3 rounded-full bg-red-600 bg-opacity-35
+                                                        cursor-pointer select-none transition duration-300 hover:bg-opacity-100">delete</button>
+                                            </div>
+                                        );
+                                    })
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {showEditor && <Editor user={data} onClose={() => setShowEditor(false)} />}
+            {showEditor && <Editor user={data?.user} onClose={() => setShowEditor(false)} />}
             <Header />
-        </>
+        </div>
     );
 };
 

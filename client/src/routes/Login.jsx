@@ -2,12 +2,11 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import axios from 'axios';
-import "../index.css";
 
 const Login = () => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState(""); 
+    const [ username, setUsername ] = useState("");
+    const [ password, setPassword ] = useState("");
+    const [ error, setError ] = useState(""); 
     const navigate = useNavigate();
     const { setData } = useContext(AuthContext);
 
@@ -18,7 +17,6 @@ const Login = () => {
                 username, password,
             }, {
                 method: "POST",
-                withCredentials: true,
                 headers: {
                     "Content-Type": "application/json",
                     "Acccept": "application/json",
@@ -35,7 +33,7 @@ const Login = () => {
     };
 
     return (
-        <>
+        <div className="animatedBg">
             <section className="prompt my-[180px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
                 <form onSubmit={handleSubmit}>
                     <h1 className="text-center text-4xl font-bold my-4">Login</h1>
@@ -55,10 +53,10 @@ const Login = () => {
                 <p className="font-bold mt-4">Don't have an account?{" "}<a href="/signup" className="text-indigo-600">Join Today</a></p>
                 <a href="/" className="font-bold cursor-pointer"><i className="material-icons mt-5 font-bold cursor-pointer mr-2" title="Back">arrow_back</i></a>
             </section>
-            <footer className="info text-white font-bold">
+            <footer className="info text-white font-bold px-10 py-7">
                 <p>Authentication powered by{" "} <a href="https://www.passportjs.org" target="_blank" rel="noreferrer">Passport</a></p>
             </footer>
-        </>
+        </div>
     );
 };
 

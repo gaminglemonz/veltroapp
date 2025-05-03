@@ -147,7 +147,7 @@ db.serialize(() => {
   );
 
   // Insert example room
-  const imageBuffer = fs.readFileSync('client/src/public/images/veltro.png')
+  const imageBuffer = fs.readFileSync('client/public/images/veltro.png')
   db.run(
     `INSERT INTO rooms (name, owner, description, icon, banner) VALUES (?, ?, ?, ?, ?)`,
     ['Example Room #1', 'NF', 'Example', imageBuffer],

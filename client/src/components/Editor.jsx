@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate, useContext } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { AuthContext } from '../context/auth';
 
-const EditProfile = ({ user, onClose }) => {
-    const { data, loading } = useContext(AuthContext);
-    const user = data?.user || null; 
-
-    const [avatar, setAvatar] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [username, setUsername] = useState(user.username);
-    const [name, setName] = useState(user.name);
+const Editor = ({ user, onClose }) => {
+    const [ avatar, setAvatar ] = useState(null);
+    const [ preview, setPreview ] = useState(null);
+    const [ username, setUsername ] = useState(user.username);
+    const [ name, setName ] = useState(user.name);
+    const [ bio, setBio ] = useState(user.bio);
+    const { setData } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleImagePreview = (e) => {
@@ -22,28 +22,29 @@ const EditProfile = ({ user, onClose }) => {
             };
             reader.readAsDataURL(file);
         }
-    };
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        if (avatar) formData.append('avatar', avatar);
-        formData.append('username', username);
-        formData.append('name', name);
 
         try {
-            const response = await fetch('/update-profile', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
+            const response = await axios.post(`/update-profile/${user.id}`, {
+                avatar, username, name, bio
+            }, {
+                withCredentials: 'include',
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json',
+                },
             });
             
-            if (response.ok) {
+            if (response.data.success) {
                 onClose();
+                setData(response.data);
                 navigate('/dashboard');
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
+            console.error('Error updating profile:', error.message);
         }
     };
 
@@ -57,8 +58,16 @@ const EditProfile = ({ user, onClose }) => {
                         <label className="block font-bold mb-2">Profile Picture</label>
                         <div className="flex items-center space-x-4">
                             <img src={preview || `/avatar/${user.id}`} alt="Profile" className="w-20 h-20 rounded-full"  />
-                            <input type="file" accept="image/*" onChange={handleImagePreview} className="text-sm" />
+                            <label for="avatar" class="upload-button">
+                                <input name="avatar" type="file" accept="image/*" onChange={handleImagePreview} className="text-sm" />
+                                <i class="material-icons">cloud_upload</i>
+                            </label>
                         </div>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className="block font-bold mb-2">Name</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 rounded bg-slate-700"required/>
                     </div>
 
                     <div className="mb-4">
@@ -66,9 +75,9 @@ const EditProfile = ({ user, onClose }) => {
                         <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-2 rounded bg-slate-700" required />
                     </div>
 
-                    <div className="mb-6">
-                        <label className="block font-bold mb-2">Name</label>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 rounded bg-slate-700"required/>
+                    <div className="mb-4">
+                        <label className="block font-bold mb-2">Bio</label>
+                        <textarea placeholder="write something cool about yourself..." value={bio} onChange={(e) => setBio(e.target.value)} className="w-full p-2 rounded bg-slate-700"></textarea>
                     </div>
 
                     <div className="flex justify-end space-x-4">
@@ -81,4 +90,4 @@ const EditProfile = ({ user, onClose }) => {
     );
 };
 
-export default EditProfile;
+export default Editor;

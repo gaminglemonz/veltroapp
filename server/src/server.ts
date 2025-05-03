@@ -19,8 +19,8 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 passportConfig(passport);
 
-const HTTP_PORT = normalizePort(process.env.HTTP_PORT || '5000');
-const HTTPS_PORT = normalizePort(process.env.HTTPS_PORT || '5001');
+const HTTP_PORT = normalizePort(process.env.HTTP_PORT || '3000');
+const HTTPS_PORT = normalizePort(process.env.HTTPS_PORT || '3001');
 
 const privateKey = fs.readFileSync('./certificates/server.key', 'utf8');
 const certificate = fs.readFileSync('./certificates/server.cert', 'utf8');
@@ -31,14 +31,14 @@ const httpsServer = https.createServer(credentials, app);
 
 const ioHTTP = new Server(httpServer, {
     cors: {
-        origin: ["http://localhost:5173", "http://localhost:5000"],
+        origin: ["http://localhost:5173", "http://localhost:3000"],
         methods: ["GET", "POST"],
         credentials: true
     }
 });
 const ioHTTPS = new Server(httpsServer, {
     cors: {
-        origin: ["http://localhost:5173", "http://localhost:5000"],
+        origin: ["http://localhost:5173", "http://localhost:3000"],
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -115,7 +115,6 @@ async function main() {
             ioHTTPS.emit('message', { user: 'Console', msg: input });
         });
 
-        // Start the servers
         httpServer.listen(HTTP_PORT, () => {
             console.log(`HTTP Server running on port ${HTTP_PORT}`);
         });

@@ -9,8 +9,11 @@ import { promisify } from "util";
 import { arrayBuffer } from "stream/consumers";
 import db from '../db.js';
 import { error } from "console";
+import { fileURLToPath } from "url";
 
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.resolve(__filename, '../');
 
 async function loadFileType() {
     const FileType = await import('file-type');
@@ -24,7 +27,7 @@ db.runAsync = promisify(db.run.bind(db));
 const storage = multer.memoryStorage();
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 1 * 1024 * 1024 }, // 1MB limit
+    limits: { fileSize: 1 * 1024 * 1024 },
     fileFilter: (req: {}, file: { mimetype: string }, cb: any) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
@@ -77,7 +80,8 @@ const addMemberToRoom = async (roomID: number, username: string, avatar: any) =>
     } catch (err) {
         console.error('Error adding member to room:', err);
     }
-};
+}
+
 const getRoomMembers = async (roomID: number) => {
     try {
         console.log('Getting room members for roomID:', roomID);
@@ -90,11 +94,32 @@ const getRoomMembers = async (roomID: number) => {
             role: member.role,
             avatar: member.avatar
         }));
-    } catch (err) {
-        console.error('Error while getting room members:', err)
+    } catch (err: ErrorRequestHandler | any) {
+        console.error('Error while getting room members:', err.message)
         return [];
     }
-};
+}
+
+const getUserRooms = async (username: string) => {
+    try {
+        console.log("Getting rooms for", username);
+        const rows = await db.getAsync('SELECT room_id FROM room_members WHERE username = ?', [username]);
+        const rooms = await db.allAsync('SELECT * FROM rooms WHERE id = ?', [rows.room_id]);
+        console.log("Rooms:", rooms);
+        return rooms.map((room: { id: number, name: string, owner: string, description: string, icon: any, banner: any}) => ({
+            id: room.id,
+            name: room.name,
+            description: room.description,
+            owner: room.owner,
+            icon: room.icon,
+            banner: room.banner,
+        }));
+    } catch (err: ErrorRequestHandler | any) {
+        console.error("Error while getting user rooms:", err.message);
+        return [];
+    }
+}
+
 const getRoomMessages = async (roomID: number) => {
     try {
         // console.log('Messages from roomID', roomID)
@@ -114,7 +139,8 @@ const getRoomMessages = async (roomID: number) => {
         console.error("Error getting messages:", err);
         return [];
     }
-};
+}
+
 const getFriendRequests = async(userID: number) => {
     try {
         const rows = await db.allAsync('SELECT * FROM friend_requests WHERE receiver_id = ?', [userID]);
@@ -147,7 +173,7 @@ const getFriends = async(userID: number) => {
     }
 }
 
-router.get('/profile/@:username', async (req: any, res: Response) => {
+router.get('/api/profile/@:username', async (req: any, res: Response) => {
     const username = req.params.username;
     const { id } = req.user; 
     const user = await db.getAsync('SELECT * FROM users WHERE username = ?', [username]);
@@ -190,63 +216,67 @@ router.get('/room/:id/icon', async (req: Request, res: Response) => {
         res.status(500).send('Internal Server Error');
     }
 });
-router.get('/rooms/:roomId', async (req: Request | any, res: Response) => {
-    const { roomId } = req.params;
+router.get('/api/rooms/:id', async (req: Request | any, res: Response) => {
+    const { id } = req.params;
     const avatar = '/avatar/' + req.user.id;
 
-    try {
-        const room = await db.getAsync('SELECT * FROM rooms WHERE id = ?', [roomId]);
-        const messages = await getRoomMessages(roomId);
-        const members = await getRoomMembers(roomId);
+    if (!req.user) res.redirect('/login');
 
-        await addMemberToRoom(roomId, req.user.username, avatar);
+    try {
+        const room = await db.getAsync('SELECT * FROM rooms WHERE id = ?', [id]);
+        const messages = await getRoomMessages(id);
+        const members = await getRoomMembers(id);
+
+        await addMemberToRoom(id, req.user.username, avatar);
 
         if (!room) return res.status(404).send('Room not found');
-        res.render('room', { user: req.user, room, messages, members });
+
+        res.json({ success: true, room, messages, members });
     } catch (err: any) {
         console.error('Error retrieving room:', err.message);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ success: false, error: err.message});
     }
 });
 
-router.post('/create-room', upload.fields([{ name: 'icon' }, { name: 'banner' }]), async (req: Request | any, res: Response, next) => {
+router.post('/api/create-room', upload.fields([{ name: 'icon' }, { name: 'banner' }]), async (req: Request | any, res: Response) => {
     try {
-        const { name, visibility, type, password } = req.body;
+        const { name, description, type, visibility, password } = req.body;
         const owner = req.user.username;
-
-        console.log(req.files);
+        let hashedPassword = null;
 
         let iconPath = null;
         let bannerPath = null;
 
         if (req.files?.icon) {
-            iconPath = `../../public/uploads/${Date.now()}-icon-${req.files.icon[0].originalname}`;
-            fs.writeFileSync(path.join(__dirname, 'public', iconPath), req.files.icon[0].buffer);
-            console.log('Icon saved at:', iconPath);
+            iconPath = `/uploads/${Date.now()}-icon-${req.files.icon[0].originalname}`;
+            fs.writeFileSync(path.join(__dirname, '../../client/public', iconPath), req.files.icon[0].buffer);
         }
 
         if (req.files?.banner) {
-            bannerPath = `../../public/uploads/${Date.now()}-banner-${req.files.banner[0].originalname}`;
-            fs.writeFileSync(path.join(__dirname, 'public', bannerPath), req.files.banner[0].buffer);
-            console.log('Banner saved at:', bannerPath);
+            bannerPath = `/uploads/${Date.now()}-banner-${req.files.banner[0].originalname}`;
+            fs.writeFileSync(path.join(__dirname, '../../client/public', bannerPath), req.files.banner[0].buffer);
+        }
+
+        if (visibility === 'private' && password) {
+            hashedPassword = await bcrypt.hash(password, 10);
         }
 
         const existingRoom = await db.getAsync('SELECT * FROM rooms WHERE name = ?', [name]);
-        if (existingRoom) return res.status(400).send('Room already exists');
-
-        if (visibility === '1' && password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
+        if (existingRoom) {
+            return res.status(400).json({ success: false, error: 'Room already exists' });
         }
 
-        console.log('Inserting into DB:', { name, owner, iconPath, bannerPath, visibility, type });
+        await db.runAsync(
+            'INSERT INTO rooms (name, owner, description, icon, banner, visibility, type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, owner, description, iconPath, bannerPath, visibility, type]
+        );
 
-        await db.runAsync('INSERT INTO rooms (name, owner, icon, banner, visibility, type) VALUES (?, ?, ?, ?, ?, ?)', [name, owner, iconPath, bannerPath, visibility, type]);
+        const newRoomId = await db.getAsync('SELECT id FROM rooms WHERE name = ?', [name]);
 
-        extractRooms();
-        res.redirect('/rooms');
-    } catch (err: any) {
+        res.json({ success: true, id: newRoomId });
+    } catch (err: ErrorRequestHandler | any) {
         console.error('Error while creating room:', err.message);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 router.get('/friend-request/:id', async (req: any, res: Response) => { 
@@ -315,13 +345,14 @@ router.post('/signup', async (req: any, res: Response, next) => {
                 const user: { id: number, username: string } = { id: this.lastID, username };
                 req.login(user, (err: any) => {
                     if (err) return next(err);
-                    res.redirect('/rooms');
+
+                    res.json({ success: true, user })
                 });
             }
         );
-    } catch (err) {
-        console.error('Error during signup:', err);
-        next(err);
+    } catch (err: ErrorRequestHandler | any) {
+        console.error('Error during signup:', err.message);
+        res.status(500).json({ success: false, error: `Error while signing in (internal): ${err.message}`})
     }
 });
 
@@ -348,13 +379,46 @@ router.post('/login/password', (req: any, res: Response, next) => {
     })(req, res, next);
 });
 
-router.post('/update-profile', upload.single('avatar'), async (req: any, res: Response) => {
+router.get('/auth/user', async (req: Request | any, res: Response) => {
+    console.log("Received request at /user");
+    try {
+        const userData = await db.getAsync(
+            'SELECT id, username, email, name, avatar, bio, created_at, messageCount FROM users WHERE id = ?',
+            [req.user.id]
+        );
+
+        if (!userData) {
+            console.log("User not found");
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const friends = await getFriends(req.user.id);
+        const friendRequests = await getFriendRequests(req.user.id);
+        const rooms = await getUserRooms(req.user.username);
+
+        const data = {
+            user: userData,
+            friends: friends || [],
+            friendRequests: friendRequests || [],
+            friendCount: friends.length || 0,
+            rooms: rooms || [],
+        };
+
+        console.log("User data received, ", userData);
+        res.json({ success: true, data });
+    } catch (err) {
+        console.error('Error fetching user data:', err);
+        res.status(500).json({ error: 'Internal server error', success: false, });
+    }
+});
+
+router.post('/update-profile/:id', upload.single('avatar'), async (req: any, res: Response) => {
+    const updates: any = {};
     try {
         if (!req.isAuthenticated()) {
             return res.status(401).send('Unauthorized');
         }
 
-        const updates: any = {};
         const row = await db.getAsync('SELECT avatar FROM users WHERE id = ?', [req.user.id]);
         let avatar = row ? row.avatar : null;
         if (req.body.name) updates.name = req.body.name;
@@ -364,12 +428,15 @@ router.post('/update-profile', upload.single('avatar'), async (req: any, res: Re
             updates.avatar = req.file.buffer;
         }
         await db.runAsync('UPDATE users SET ? WHERE id = ?', [updates, req.user.id]);
+
+        const data = await db.getAsync('SELECT * FROM users WHERE id = ?', [req.user.id]);
     
         avatar = req.file ? req.file.buffer : (row && row.avatar) ? row.avatar : null;
-        res.json({ success: true })
-    } catch (err) {
-        console.error('Error updating profile:', err);
-        res.status(500).send('Error updating profile');
+        res.json({ success: true, data })
+    } catch (err: ErrorRequestHandler | any) {
+        console.error('Error updating profile:', err.message);
+        console.log("reqbody:", req.body, '\nupdates:', updates);
+        res.status(500).json({ success: false, error: `Error while updating profile: ${err.message}` });
     }
 });
 
@@ -423,7 +490,6 @@ router.get('/avatar/:id', async (req: Request, res: Response) => {
         const userData = await db.getAsync('SELECT avatar FROM users WHERE id = ?', [req.params.id]);
         
         if (!userData || !userData.avatar) {
-            // Serve a default avatar if none exists
             return res.sendFile(path.join(__dirname, '../public/default-avatar.png'));
         }
 
@@ -460,59 +526,36 @@ router.post('/logout', (req: any, res: Response, next) => {
     });
 });
 
-router.get('/room/:id', async (req: Request | any, res: Response) => {
+router.get('/api/roomlist', async (req: Request | any, res: Response) => {
     try {
-        const room = await db.getAsync("SELECT * FROM users WHERE id = ?", [req.params.id]);
+        const rooms = await db.allAsync('SELECT * FROM rooms');
+        if (!rooms || rooms.length === 0) return res.status(404).json({ success: false, error: 'No rooms found' });
 
-        if (!room) return res.status(404).json({ success: false, error: 'Room not found' });
-
-        res.json(room);
+        res.json({ success: true, rooms })
     } catch (err: ErrorRequestHandler | any) {
-        console.error('Error getting room data:', err);
-        res.status(500).json({ success: false, error: err.message });
+        console.error('Error while getting rooms:', err);
+        res.status(500).json({ success: false, error: err.message || "Error fetching room list" });
     }
 });
-router.get('/rooms/messages/:id', async (req: Request | any, res: Response) => {
+router.get('/api/roomlist/:username', async (req: Request | any, res: Response) => {
+    try {
+        const rooms = await getUserRooms(req.params.username);
+        if (!rooms || rooms.length === 0) return res.status(404).json({ success: false, error: 'No rooms found' });
+
+        res.json({ success: true, rooms });
+    }
+    catch (err: ErrorRequestHandler | any) {
+        console.error('Error while getting rooms for user:', err.message);
+        res.status(500).json({ success: false, error: err.message || "Error fetching user rooms"});
+    }
+});
+router.get('/api/rooms/messages/:id', async (req: Request | any, res: Response) => {
     try {
         const messages = await db.getAsync('SELECT * FROM messages WHERE room_id = ?', [req.params.id]);
-        res.json(messages);
+        res.json({ success: true, messages });
     } catch (err: ErrorRequestHandler | any) {
-        console.error('Error while getting room messages:', err)
-    }
-});
-router.get('/user', async (req: Request | any, res: Response) => {
-    console.log("Received request at /user");
-    try {
-        if (!req.isAuthenticated()) {
-            console.error("Unauthorized");
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const userData = await db.getAsync(
-            'SELECT id, username, email, name, avatar, bio, created_at, messageCount FROM users WHERE id = ?',
-            [req.user.id]
-        );
-
-        if (!userData) {
-            console.log("User not found");
-            return res.status(404).json({ success: false, error: 'User not found' });
-        }
-
-        const friends = await getFriends(req.user.id);
-        const friendRequests = await getFriendRequests(req.user.id);
-
-        const data = {
-            user: userData,
-            friends: friends || [],
-            friendRequests: friendRequests || [],
-            friendCount: friends.length || 0,
-        };
-
-        console.log("User data received, ", userData);
-        res.json({ success: true, data });
-    } catch (err) {
-        console.error('Error fetching user data:', err);
-        res.status(500).json({ error: 'Internal server error', success: false, });
+        console.error('Error while getting room messages:', err);
+        res.status(500).json({ success: false, error: err.message || "Error fetching room messages" });
     }
 });
 

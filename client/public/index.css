@@ -1,3 +1,56 @@
+/* Tailwind Setup */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Animated Backgrounds */
+* {
+    margin:0;
+    padding:0;
+}
+
+.animatedBg::before {
+        content:"";
+        position:fixed;
+        z-index: -100;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background-attachment: fixed;
+        background-size: cover;
+        background-color:#146acc;
+        background-image: 
+        radial-gradient(circle farthest-side at top right, transparent, #620dff), radial-gradient(ellipse farthest-corner at 0% 100%, transparent, #9900ff);
+        animation:bg-change 10s infinite;
+}
+
+@keyframes bg-change {
+    0%, 100% {
+        filter:hue-rotate(0deg);
+    }
+    50% {
+        filter:hue-rotate(-45deg);
+    }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 500ms ease-out;
+}
+
+/* Custom Upload Button */
+input[type='file'] {
+    display: none;
+}
+.upload-button {
+    background-color: var(--color-blue-500);
+    color: var(--color-white);
+    border-radius: 100%;
+    display: inline-block;
+}

@@ -2,7 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:3000",
   "type": "module",
   "dependencies": {
     "@sentry/browser": "^8.54.0",
@@ -22,7 +22,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "rebuild": "npm run build && npm run dev"
   },
   "browserslist": {
     "production": [

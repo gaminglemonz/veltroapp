@@ -11,8 +11,7 @@ const AuthProvider = ({ children }) => {
     useEffect(() => {
         async function fetch () {
             try {
-                const response = await axios.get('/user',{
-                    withCredentials: true,
+                const response = await axios.get('/auth/user',{
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',

@@ -26,10 +26,8 @@ const Error = () => {
     const errorPage = 
     <div className="dark:bg-slate-900 dark:text-white min-h-screen flex items-center justify-center p-4">
         <div className="max-w-2xl w-full text-center space-y-8">
-        <h1
-            className="text-8xl md:text-9xl font-bold text-transparent bg-clip-text 
-                    bg-gradient-to-r from-indigo-600 to-purple-600 animate-bounce"
-        >
+        <h1 className="text-8xl md:text-9xl font-bold text-transparent bg-clip-text 
+                    bg-gradient-to-r from-indigo-600 to-purple-600 animate-bounce">
             {errorCode}
         </h1>
 
@@ -42,25 +40,16 @@ const Error = () => {
         )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-            <a
-            href="/"
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-            Back to Home
+            <a href="/" className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                Back to Home
             </a>
-            <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-            >
-            Go Back
+            <button onClick={() => navigate(-1)} className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">
+                Go Back
             </button>
         </div>
 
         <p className="text-gray-400 mt-8">
-            Need help?{' '}
-            <a href="/support" className="text-indigo-400 hover:underline">
-            Contact Support
-            </a>
+            Need help?{' '}<a href="/support" className="text-indigo-400 hover:underline">Contact Support</a>
         </p>
         </div>
     </div>
