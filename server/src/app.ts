@@ -11,12 +11,27 @@ import session, { Store } from 'express-session';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 const SQLiteStore = connectSqlite3(session);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5000,
+    message: "Too many API requests from this IP, please try again later.",
+    headers: true,
+    handler: (req: Request, res: Response, next: NextFunction) => {
+        console.warn(`❗❗❗ Rate limit exceeded for IP: ${req.ip}`);
+        res.status(429).json({
+            status: 429,
+            error: "Too many requests from this IP, please try again later.",
+        });
+    },
+});
 
 const app = express();
 
@@ -25,6 +40,7 @@ app.use(cors({
     credentials: true,
 }));
 
+app.use(limiter);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -39,9 +55,10 @@ app.use(session({
         table: 'sessions'
     }) as Store,
     secret: process.env.SESSION_SECRET || 'fallback_secret',
-    resave: false,
+    resave: true,
     saveUninitialized: false,
     cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 365,
         secure: process.env.NODE_ENV === 'production',
         httpOnly: false,
     }
@@ -79,14 +96,6 @@ const checkFileType = (file: Express.Multer.File, cb: multer.FileFilterCallback)
         cb(new Error('Something went wrong. Image size is too large, or not the correct type.\nOnly use PNG, JPG, or WEBP files under 5 MB'));
     }
 };
-
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 5000000 },
-    fileFilter: (req, file, cb) => {
-        checkFileType(file, cb);
-    }
-}).single('avatar');
 
 app.use((err: ErrorRequestHandler | any, req: Request, res: Response, next: NextFunction) => {
     res.locals.message = err.message;

@@ -43,31 +43,30 @@ const CreateRoom = () => {
     }
     const handleSubmit = async (e) => {
         e.preventDefault();
+     
         try {
-            const formData = new FormData();
-            formData.append('name', name);
-            formData.append('description', description);
-            formData.append('type', type);
-            formData.append('visibility', visibility);
+            const formInfo = new FormData();
+            formInfo.append('name', name);
+            formInfo.append('description', description);
+            formInfo.append('type', type);
+            formInfo.append('visibility', visibility);
             if (visibility === 'private') {
-                formData.append('password', password);
+                formInfo.append('password', password);
             }
             if (icon) {
-                formData.append('icon', icon);
+                formInfo.append('icon', icon);
             }
             if (banner) {
-                formData.append('banner', banner);
+                formInfo.append('banner', banner);
             }
     
-            const response = await axios.post('/api/create-room', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            [...formInfo.entries()].forEach(([k, v]) => console.log(k, v));
+            const response = await axios.post('/api/create-room', formInfo, {
                 withCredentials: true,
             });
-    
+            
             if (response.data.success) {
-                navigate(`/room/${response.data.id}`);
+                navigate(`/rooms/${response.data.id}`);
             } else {
                 console.error('Error creating room:', response.data.error);
             }
@@ -144,10 +143,13 @@ const CreateRoom = () => {
 
                     { visibility === 'private' ? (
                         <div className="mb-6">
-                        <label className="block font-bold mb-2">Password</label>
-                        <input required type="text" value={password}
-                               onChange={(e) => setPassword(e.target.value)} className="w-full p-2 rounded bg-slate-700" />
-                    </div>
+                            <label className="block font-bold mb-2">Password</label>
+                            <input required type="text" 
+                                value={password}
+                                placeholder="recommended for friend groups"
+                                onChange={(e) => setPassword(e.target.value)} 
+                                className="w-full p-2 rounded bg-slate-700" />
+                        </div>
                     ) : null }
 
                     <div className="flex justify-end space-x-4">

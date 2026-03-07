@@ -118,6 +118,7 @@ db.serialize(() => {
       banner BLOB,
       visibility TEXT,
       type TEXT,
+      hashedPassword BLOB,
       memberCount INTEGER DEFAULT 0,
       messageCount INTEGER DEFAULT 0
     )`,
@@ -146,23 +147,25 @@ db.serialize(() => {
     }
   );
 
-  // Insert example room
-  const imageBuffer = fs.readFileSync('client/public/images/veltro.png')
   db.run(
-    `INSERT INTO rooms (name, owner, description, icon, banner) VALUES (?, ?, ?, ?, ?)`,
-    ['Example Room #1', 'NF', 'Example', imageBuffer],
-    (err) => {
+    `CREATE TABLE IF NOT EXISTS private_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      encrypted_id BLOB,
+      username TEXT NOT NULL,
+      sender_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      encrypted_message TEXT NOT NULL,
+      avatar BLOB,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (sender_id) REFERENCES users(id),
+      FOREIGN KEY (receiver_id) REFERENCES users(id)
+    )`, (err) => {
       if (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
-          console.log('Example room already exists. Skipping insertion.');
-        } else {
-          console.error('Error inserting example room:', err.message);
-        }
+        console.error('Error creating private_messages table:', err.message);
       } else {
-        console.log('Example room inserted successfully.');
+        console.log('Private messages table created or already exists.');
       }
-    }
-  );
+    });
 
   db.run(`UPDATE rooms SET messageCount = (SELECT COUNT(*) FROM messages WHERE messages.room_id = rooms.id)`, (err) => {
     if (err) {
@@ -171,9 +174,50 @@ db.serialize(() => {
       console.log('Message count updated successfully.');
     }
   });
+  db.run(
+    `CREATE TABLE IF NOT EXISTS private_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      encrypted_id BLOB,
+      username TEXT NOT NULL,
+      sender_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      encrypted_message TEXT NOT NULL,
+      avatar BLOB,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (sender_id) REFERENCES users(id),
+      FOREIGN KEY (receiver_id) REFERENCES users(id),
+      FOREIGN KEY (encrypted_id) REFERENCES private_message_rooms(encrypted_id)
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating private_messages table:', err.message);
+      } else {
+        console.log('Private messages table created or already exists.');
+      }
+    });
+
+  db.run(`UPDATE rooms SET messageCount = (SELECT COUNT(*) FROM messages WHERE messages.room_id = rooms.id)`, (err) => {
+    if (err) {
+      console.error('Error updating message count:', err.message);
+    } else {
+      console.log('Message count updated successfully.');
+    }
+  });
+  db.run(
+    `CREATE TABLE IF NOT EXISTS private_message_rooms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      encrypted_id BLOB,
+      sender_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating private_messages_rooms table:', err.message);
+      } else {
+        console.log('Private messaging rooms table created or already exists.');
+      }
+    });
 
   // Alter SQL Table Here
-  // db.exec(`DROP TABLE messages`, (err) => {
+  // db.exec(`ALTER TABLE rooms ADD COLUMN hashedPassword`, (err) => {
   //   if (err) {
   //        console.error('Error altering database:', err.message);
   //   } else {

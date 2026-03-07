@@ -33,7 +33,7 @@ const Home = () => {
                 className="min-h-screen flex items-center justify-center relative text-white">
                 <div className="absolute inset-0 bg-black bg-opacity-50"></div>
                 <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-5xl md:text-5xl lg:text-7xl font-bold text-white mb-8">
+                    <h1 className="title text-5xl md:text-5xl lg:text-7xl font-bold text-white mb-8">
                         Connect Instantly<br/>
                         <span className="text-indigo-400">Anywhere, Anytime</span>
                     </h1>
@@ -53,7 +53,7 @@ const Home = () => {
 
             <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-800 select-none" ref={scrollBody}>
                 <div className="max-w-7xl mx-auto">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">Why Choose Veltro?</h2>
+                    <h2 className="title text-3xl sm:text-4xl font-bold text-center mb-16">Why Choose Veltro?</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                         <div className="text-center p-6 rounded-xl bg-slate-700 transform transition duration-300 hover:scale-105">
                             <i className="material-icons text-5xl text-indigo-400 mb-4">speed</i>
@@ -75,10 +75,10 @@ const Home = () => {
             </section>
 
             <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900 w-full" id="download">
-                <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">Get The App</h2>
-                <a download href='error.ejs' className="mx-auto table p-7 rounded-2xl font-bold 
+                <h2 className="title text-3xl sm:text-4xl font-bold text-center mb-8">Download For</h2>
+                <a download href='error.ejs' className="mx-auto flex align-center w-fit max-w-fit p-7 rounded-2xl font-bold 
                 text-xl text-white bg-indigo-600 hover:bg-indigo-700 transition transform duration-500 hover:scale-105">
-                    Download for <img src={`${osIcon[findOS()]}`} id="OS-icon" width="20" className="inline mx-2" /> <span id='OS'>{findOS()}</span>
+                    <img src={`${osIcon[findOS()]}`} id="OS-icon" width="20" className="inline mx-3" /> <span id='OS'>{findOS()}</span>
                 </a>
                 <p className="text-center font-bold text-gray-400 mt-7 cursor-pointer" id="alt-downloads">Other downloads...</p>
             </section>

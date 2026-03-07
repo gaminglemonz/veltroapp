@@ -5,3 +5,5 @@ certificates/
 .env
 .github/
 alterSQL.js
+npm-debug.log
+encrypt.js

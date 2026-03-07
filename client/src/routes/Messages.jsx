@@ -1,25 +1,23 @@
 import React, { useEffect, useState, useRef, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Members from "../components/Members";
 import Header from "../components/Header";
 import Loading from "../components/Loading";
 import Navigator from "../components/Navigator";
 import { AuthContext } from "../context/auth";
 import { io } from "socket.io-client";
 import { motion } from "motion/react";
+import CryptoJS from 'crypto-js';
 
-const Room = () => {
-    const { id } = useParams();
+const Messages = () => {
+    const { encryptedId } = useParams();
     const [ socket, setSocket ] = useState(null);
-	const [ room, setRoom ] = useState(null);
-    const [ members, setMembers ] = useState([]);
+    const [ receiverID, setReceiverID ] = useState(0);
+    const [ roomID, setRoomID ] = useState(0);
     const [ message, setMessage ] = useState("");
     const [ messages, setMessages ] = useState([]);
     const [ typing, setTyping ] = useState(false);
     const [ error, setError ]  = useState(null);
-    const [ showMembersPanel, setShowMembersPanel ] = useState(false);
-    const [ showInfoPanel, setShowInfoPanel ] = useState(false);
 	const { data, loading } = useContext(AuthContext);
     const messagesEndRef = useRef(null);
 
@@ -32,22 +30,24 @@ const Room = () => {
     useEffect(() => {
         const fetch = async () => {
             try {
-                const response = await axios.get(`/api/rooms/${id}`, {
+                const response = await axios.get(`/api/messages/${encryptedId}`, {
                     headers: {
                         'Content-Type': "application/json",
                         'Accept': "application/json",
                     },
                 });
-                console.log("Returned room data:", response.data.room);
+                console.log("Data received:", response.data);
+                console.log("Messages loaded:", response.data.messages);
 				if (response.data.success) {
-                    setRoom(response.data.room);
 					setMessages(response.data.messages);
-                    setMembers(response.data.members);
+                    setReceiverID(response.data.receiverID);
+                    setRoomID(response.data.roomID);
 					scrollToBottom();
 				} else {
 					setMessages([]);
-                    setMembers([]);
-					setRoom(null);
+                    setReceiverID(0);
+                    setRoomID(0);
+                    console.log("Receiver iD:", response.data.receiverID);
 					setError(response.data.error);
 					console.error('Error fetching messages:', response.data.error);
 				}
@@ -58,35 +58,22 @@ const Room = () => {
         }
         fetch();
     }, []);
-    useEffect(() => {
-        async function joinRoom () {
-            try {
-                const request = await axios.post("/api/join-room/:id", {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    }
-                });
-                if (request.data.success) {
-                    console.log("User has joined room or is already in room");
-                }
-            } catch (err) {
-                console.error("Error joining room:", err.message);
-            }
-        }
-        joinRoom();
-    }, []);
     
     // console.log("Data from context:", data);
     console.log("User data for room:", user);
-    console.log("Current message list:", messages);
-    // console.log("Current members list:", members);
+    // console.log("Current message list:", messages);
 
     useEffect(() => {
         if (loading || !user) return;
  
         const newSocket = io("http://localhost:3000", {
-            query: { username: user.name,  roomId: id, roomName: room.name, avatar: `/avatar/${user.id}` },
+            query: { 
+                username: user.name, 
+                userID: user.id,
+                roomId: roomID,
+                PMID: encryptedId, 
+                avatar: `/avatar/${user.id}`,
+            },
             auth: { serverOffset: 0 },
         });
 
@@ -96,13 +83,12 @@ const Room = () => {
         return () => {
             newSocket.disconnect();
         }
-    }, [user, room, loading]);
+    }, [user, loading]);
     useEffect(() => {
-        if (!room || !socket) return;
+        if (!socket) return;
         socket.connect();
-        socket.emit("join room", { room });
 
-        socket.on("message", (data) => {
+        socket.on("private message", (data) => {
             setMessages((prev) => [
                 ...prev,
                 {
@@ -110,6 +96,7 @@ const Room = () => {
                     content: data.msg,
                     timestamp: data.timestamp,
                     avatar: data.avatar,
+                    encrypted: false,
                 },
             ]);
             scrollToBottom();
@@ -122,13 +109,13 @@ const Room = () => {
         })
 
         return () => {
-            socket.off("message");
+            socket.off("private message");
             socket.disconnect();
         };
-    }, [socket, user, room]);
+    }, [socket, user]);
     useEffect(() => {
-        if (room) document.title = `${room.name} - Veltro`;
-    }, [room]);
+        document.title = `Private Messages - Veltro`;
+    }, []);
     useEffect(() => {
         scrollToBottom();
     }, []);
@@ -139,24 +126,52 @@ const Room = () => {
         e.preventDefault();
         if (!message.trim()) return;
 
-        socket.emit("message", {
-            roomId: id, msg: message.trim(), user: user.name, avatar: `avatar/${user.id}/`,
+        socket.emit("private message", {
+            PMID: encryptedId,
+            msg: message.trim(),
+            receiverID,
+            name: user.name,
+            avatar: `avatar/${user.id}/`,
         });
         setMessage("");
         scrollToBottom();
     };
-    const handleTyping = () => {
-        socket.emit("user typing", { name: user.name, roomId: id });
-    }
-    const togglePanel = (panel) => {
-        if (panel === "members") {
-            setShowMembersPanel((prev) => !prev);
-            setShowInfoPanel(false);
-        } else if (panel === "info") {
-            setShowInfoPanel((prev) => !prev);
-            setShowMembersPanel(false);
+
+    const isHex = (str) =>
+        typeof str === "string" &&
+        /^[0-9a-fA-F]+$/.test(str) &&
+        str.length % 2 === 0 &&
+        str.length > 32;
+
+    const decrypter = (text) => {
+        try {
+            // console.log(text);
+            const keyHex = import.meta.env.VITE_AES_KEY;
+            const ivHex = import.meta.env.VITE_AES_IV;
+            if (!keyHex || !ivHex) {
+                console.error("Missing AES_KEY or AES_IV.");
+                return "[decryption error]";
+            }
+            const key = CryptoJS.enc.Hex.parse(keyHex);
+            const iv = CryptoJS.enc.Hex.parse(ivHex);
+            const ciphertextBase64 = CryptoJS.enc.Hex.parse(text).toString(CryptoJS.enc.Base64);
+            const decrypted = CryptoJS.AES.decrypt(
+                ciphertextBase64,
+                key,
+                { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+            );
+            const result = decrypted.toString(CryptoJS.enc.Utf8);
+            // console.log(result);
+            return result || "[decryption error]";
+        } catch (err) {
+            console.error("Decryption error:", err);
+            return "[decryption error]";
         }
-    }
+    };
+
+    // const handleTyping = () => {
+    //     socket.emit("private user typing", { name: user.name, roomId: id });
+    // }
     
     return (
         <div className="ml-[20%]">
@@ -178,7 +193,7 @@ const Room = () => {
                                     msg.username === user.name ? 
                                     "ml-auto text-xl px-3 py-2" : 
                                     "text-xl px-3 py-2"
-                                }>{msg.content}</p>
+                                }>{msg.encrypted ? decrypter(msg.content) : msg.content}</p>
                             </div>
                         ))}
                         <div ref={messagesEndRef} />
@@ -193,40 +208,11 @@ const Room = () => {
                 <form id="form" onSubmit={sendMessage} className="fixed bottom-0 left-[20%] py-16 px-12 bg-transparent backdrop-blur-md 
                                                                   shadow-lg flex justify-center w-[80%]">
                     <input id="input" autoComplete="off" placeholder="send a message..." className="focus:outline-none bg-slate-700 text-white text-xl px-6 py-4 mr-10 rounded-full w-[90%]"
-                        value={message} onChange={(e) => setMessage(e.target.value)} onInput={handleTyping} />
+                        value={message} onChange={(e) => setMessage(e.target.value)} />
                     <button id="send-button" type="submit" className="material-icons bg-black text-white text-2xl text-center 
                                                                     font-bold px-5 py-3 rounded-full transition-all duration-300 disabled:opacity-30"
                         disabled={!message.trim()}>arrow_upward</button>
                 </form>
-
-                <div id="control-panel" className="select-none flex fixed top-10 right-10 p-6 bg-black bg-opacity-35 
-                    backdrop-blur-md rounded-xl z-50">
-                    <i className="material-symbols-outlined font-bold cursor-pointer mx-3 text-4xl 
-                    hover:text-gray-300 transition-colors" id="toggle-info" onClick={() => togglePanel("info")}>info</i>
-                    <i className="material-icons font-bold cursor-pointer mx-3 text-4xl hover:text-gray-300 transition-colors"
-                        id="toggle-members" onClick={() => togglePanel("members")}>groups</i>
-                </div>
-
-                {showMembersPanel && (
-                    <div id="members-panel" className="bg-black bg-opacity-35 backdrop-blur-md fixed top-40 right-10 
-                        px-16 py-10 z-10 rounded-xl transition-all">
-                        <h2 className="font-bold text-3xl">People</h2>
-                        <Members members={members} />
-                    </div>
-                )}
-
-                {showInfoPanel && (
-                    <div id="info" className="bg-black bg-opacity-35 backdrop-blur-md fixed top-40 right-10 px-16 py-10
-                        z-10 rounded-xl transition-all">
-                        <h2 className="font-bold text-3xl mb-7">Additional Info</h2>
-                        <h3 className="font-bold text-2xl my-2">Room Name</h3>
-                        <p className="font-bold text-xl mb-7">{room.name}</p>
-                        <h3 className="font-bold text-2xl my-2">Owner</h3>
-                        <p className="font-bold text-xl">{room.owner}</p>
-                        <h3 className="font-bold text-2xl my-2">Description</h3>
-                        <p className="font-bold text-xl">{room.description}</p>
-                    </div>
-                )}
 
             </div>
             <Header />
@@ -235,4 +221,4 @@ const Room = () => {
     );
 };
 
-export default Room;
+export default Messages;

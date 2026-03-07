@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
@@ -14,29 +18,15 @@ import { fileURLToPath } from 'node:url';
 import path from 'path';
 import app from './app.js';
 import passportConfig from '../passport-config.js';
-import * as dotenv from 'dotenv';
+import crypto from 'crypto';
 
-dotenv.config();
 passportConfig(passport);
 
 const HTTP_PORT = normalizePort(process.env.HTTP_PORT || '3000');
-const HTTPS_PORT = normalizePort(process.env.HTTPS_PORT || '3001');
-
-const privateKey = fs.readFileSync('./certificates/server.key', 'utf8');
-const certificate = fs.readFileSync('./certificates/server.cert', 'utf8');
-const credentials = { key: privateKey, cert: certificate };
 
 const httpServer = http.createServer(app);
-const httpsServer = https.createServer(credentials, app);
 
 const ioHTTP = new Server(httpServer, {
-    cors: {
-        origin: ["http://localhost:5173", "http://localhost:3000"],
-        methods: ["GET", "POST"],
-        credentials: true
-    }
-});
-const ioHTTPS = new Server(httpsServer, {
     cors: {
         origin: ["http://localhost:5173", "http://localhost:3000"],
         methods: ["GET", "POST"],
@@ -49,6 +39,7 @@ let db: any;
 const setupSocket = (io: Server) => {
     io.on('connection', async (socket: any) => {
         const username: string = socket.handshake.query.username;
+        const userID: number = socket.handshake.query.userID;
         const roomId = socket.handshake.query.roomId;
         const roomName = socket.handshake.query.roomName;
         const timestamp = new Date().toISOString();
@@ -70,18 +61,41 @@ const setupSocket = (io: Server) => {
                 console.error('Error inserting message:', error);
             }
         });
+        socket.on('private message', async (data: { PMID: string | string[], name: string, roomID: number, receiverID: number, avatar: any, msg: string }) => {
+            const { PMID, name, avatar, msg, receiverID } = data;
+            const msgTimestamp = new Date().toISOString();
 
-        socket.on('user typing', (data: { roomId: string | string[], user: string }) => {
+            let encryptedMessage = '';
+            if (typeof msg === 'string') {
+                const cipher = crypto.createCipheriv(
+                    'aes-256-cbc',
+                    Buffer.from(process.env.AES_KEY as string, 'hex'),
+                    Buffer.from(process.env.AES_IV as string, 'hex')
+                );
+                encryptedMessage = cipher.update(msg, 'utf8', 'hex') + cipher.final('hex');
+            } else {
+                throw new Error('Message to encrypt must be a string');
+            }
+            try {
+                await db.run(
+                    `INSERT INTO private_messages (encrypted_id, avatar, encrypted_message, username, timestamp, 
+                    sender_id, receiver_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [PMID, avatar, encryptedMessage, name, msgTimestamp, userID, receiverID]
+                );
+                io.to(roomId).emit('private message', { name, msg, avatar, timestamp: msgTimestamp, userID, receiverID });
+            } catch (error) {
+                console.error('Error inserting message:', error);
+            }
+        });
+
+        socket.on('user typing public', (data: { roomId: string | string[], user: string }) => {
             const { roomId, user } = data;
             io.to(roomId).emit('user typing', user);
         });
 
-        socket.on('ping', () => {
-            io.emit('pong');
-        });
-
-        socket.on('recorded ping', (ping: number) => {
-            console.log(`Client from ${username} received ping of ${ping}`);
+        socket.on('user typing private', (data: { PMID: string | string[], user: string }) => {
+            const { PMID, user } = data;
+            io.to(PMID).emit('user typing private', user);
         });
 
         socket.on('disconnect', async () => {
@@ -92,7 +106,6 @@ const setupSocket = (io: Server) => {
 };
 
 setupSocket(ioHTTP);
-setupSocket(ioHTTPS);
 
 async function main() {
     try {
@@ -112,14 +125,10 @@ async function main() {
         rl.on('line', (input: string) => {
             console.log(`<Console> ${input}`);
             ioHTTP.emit('message', { user: 'Console', msg: input });
-            ioHTTPS.emit('message', { user: 'Console', msg: input });
         });
 
         httpServer.listen(HTTP_PORT, () => {
             console.log(`HTTP Server running on port ${HTTP_PORT}`);
-        });
-        httpsServer.listen(HTTPS_PORT, () => {
-            console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
         });
     } catch (err) {
         console.error('Failed to start server:', err);

@@ -10,6 +10,13 @@ const Login = () => {
     const navigate = useNavigate();
     const { setData } = useContext(AuthContext);
 
+    const handleErrors = (err) => {
+        if (err.includes("401")) {
+            return "Invalid username or password. Please try again.";
+        } else {
+            return err;
+        }
+    }
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -36,7 +43,7 @@ const Login = () => {
         <div className="animatedBg">
             <section className="prompt my-[180px] mx-auto p-10 shadow-lg w-96 rounded-lg bg-white">
                 <form onSubmit={handleSubmit}>
-                    <h1 className="text-center text-4xl font-bold my-4">Login</h1>
+                    <h1 className="text-center text-4xl font-bold mb-6">Login</h1>
 
                     <label className="block font-bold text-2xl" htmlFor="username">Username</label>
                     <input className="block border border-gray-300 rounded-lg my-4 p-2"
@@ -48,7 +55,7 @@ const Login = () => {
                         required />
 
                     <button type="submit" className="bg-gray-200 font-bold text-xl my-2 p-5 rounded-md" title="Login" >Login</button>
-                    {error && <p className="text-red-500">{error}</p>}
+                    {error && <p className="text-red-500">{handleErrors(error)}</p>}
                 </form>
                 <p className="font-bold mt-4">Don't have an account?{" "}<a href="/signup" className="text-indigo-600">Join Today</a></p>
                 <a href="/" className="font-bold cursor-pointer"><i className="material-icons mt-5 font-bold cursor-pointer mr-2" title="Back">arrow_back</i></a>

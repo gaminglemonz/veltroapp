@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import './index.css';
 import Home from './routes/Home';
 import Dashboard from './routes/Dashboard';
 import Room from './routes/Room';
@@ -10,7 +11,7 @@ import Signup from './routes/Signup';
 import Profile from './routes/Profile';
 import CreateRoom from './routes/CreateRoom';
 import Friends from './routes/Friends';
-import './index.css';
+import Messages from './routes/Messages';
 
 const App = () => {
     return (
@@ -24,6 +25,7 @@ const App = () => {
             <Route path="/friends" element={<Friends />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/create-room" element={<CreateRoom />} />
+            <Route path="/messages/:encryptedId" element={<Messages />} />
             <Route path="/rooms/:id" element={<Room />} />
         </Routes>
     );
